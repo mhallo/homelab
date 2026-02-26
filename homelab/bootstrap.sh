@@ -7,8 +7,11 @@ DIR="/tmp/homelab-bootstrap"
 sudo apt update
 sudo apt install -y git pipx python3-venv
 
-# Use current non-root user for pipx install
+# Install ansible
 pipx install --include-deps ansible --force
+
+# Tell Git the temp folder is safe
+git config --global --add safe.directory "$DIR"
 
 if [ -d "$DIR" ]; then
     echo "$DIR exists, pulling latest changes"
@@ -19,5 +22,5 @@ else
     cd "$DIR"
 fi
 
-# Run playbook using full path to ansible-playbook in pipx
+# Run ansible-playbook
 ~/.local/bin/ansible-playbook -i inventory site.yml
