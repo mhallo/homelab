@@ -23,4 +23,4 @@ else
 fi
 
 # Run ansible-playbook
-~/.local/bin/ansible-playbook -i inventory site.yml
+~/.local/bin/ansible-playbook -i inventory homelab/site.yml
