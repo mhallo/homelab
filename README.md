@@ -1,6 +1,6 @@
-# homelab
+# Homelab
 Provisioning and GitOps for my homelab
 
-## Invocation
+## Provisioning
 
 `curl -fsSL https://github.com/mhallo/homelab/raw/main/bootstrap.sh | bash`
