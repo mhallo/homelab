@@ -13,10 +13,6 @@
 
   tasks:
 
-    - name: Install Docker Engine and Compose plugin
-      hosts: localhost
-      become: true
-        
     - name: Remove old Docker versions if present
       apt:
         name:
@@ -27,7 +23,7 @@
           - runc
         state: absent
         purge: yes
-      ignore_errors: yes  # in case they aren't installed
+      ignore_errors: yes
 
     - name: Install prerequisites for Docker
       apt:
@@ -60,14 +56,26 @@
         update_cache: yes
 
     - name: Install Docker Engine and Compose plugin
-        apt:
-          name:
-            - docker-ce
-            - docker-ce-cli
-            - containerd.io
-            - docker-buildx-plugin
-            - docker-compose-plugin
-          state: present
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ssh_user }}"
+        groups: docker
+        append: true
 
     - name: Ensure homelab base folders exist
       file:
