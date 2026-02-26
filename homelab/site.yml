@@ -13,11 +13,10 @@
 
   tasks:
 
-    - name: Install Docker and Compose plugin
+    - name: Install Docker
       apt:
         name:
           - docker.io
-          - docker-compose-plugin
         state: present
         update_cache: yes
 
