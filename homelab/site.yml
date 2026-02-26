@@ -9,6 +9,7 @@
       - /srv/data
       - /srv/backups
       - /srv/config
+    ssh_user: "{{ ansible_user_id }}"
 
   tasks:
 
@@ -28,7 +29,7 @@
 
     - name: Add user to docker group
       user:
-        name: "{{ ansible_user_id }}"
+        name: "{{ ssh_user }}"
         groups: docker
         append: true
 
@@ -36,7 +37,45 @@
       file:
         path: "{{ item }}"
         state: directory
-        owner: "{{ ansible_user_id }}"
-        group: "{{ ansible_user_id }}"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
         mode: '0755'
       loop: "{{ homelab_folders }}"
+
+    - name: Allow SSH through firewall
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+
+    - name: Install unattended-upgrades package
+      apt:
+        name: unattended-upgrades
+        state: present
+        update_cache: yes
+
+    - name: Enable unattended-upgrades
+      lineinfile:
+        path: /etc/apt/apt.conf.d/20auto-upgrades
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^APT::Periodic::Update-Package-Lists', line: 'APT::Periodic::Update-Package-Lists "1";' }
+        - { regexp: '^APT::Periodic::Unattended-Upgrade', line: 'APT::Periodic::Unattended-Upgrade "1";' }
+
+    - name: Ensure password authentication is disabled
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+      notify: Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
