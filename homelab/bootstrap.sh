@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="https://github.com/mhallo/homelab.git"
-DIR="$HOME/homelab"
+DIR="/tmp/homelab-bootstrap"
 
 sudo apt update
 sudo apt install -y git pipx python3-venv
