@@ -1,11 +1,18 @@
 ---
-- name: Install Docker
+- name: Setup homelab compute node
   hosts: localhost
   become: true
 
+  vars:
+    homelab_folders:
+      - /srv/docker
+      - /srv/data
+      - /srv/backups
+      - /srv/config
+
   tasks:
 
-    - name: Install Docker and Compose
+    - name: Install Docker and Compose plugin
       apt:
         name:
           - docker.io
@@ -24,3 +31,12 @@
         name: "{{ ansible_user_id }}"
         groups: docker
         append: true
+
+    - name: Ensure homelab base folders exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: '0755'
+      loop: "{{ homelab_folders }}"
