@@ -1,0 +1,26 @@
+---
+- name: Install Docker
+  hosts: localhost
+  become: true
+
+  tasks:
+
+    - name: Install Docker and Compose
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: true
