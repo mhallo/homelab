@@ -31,4 +31,4 @@ if [ -z "$SITE_PLAYBOOK" ]; then
 fi
 
 # Run the playbook with inventory
-~/.local/bin/ansible-playbook -i "$DIR/inventory" "$SITE_PLAYBOOK"
+sudo ~/.local/bin/ansible-playbook -i "$DIR/inventory" "$SITE_PLAYBOOK"
