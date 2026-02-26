@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x 
 
 REPO="https://github.com/mhallo/homelab.git"
 DIR="/tmp/homelab-bootstrap"
