@@ -31,4 +31,4 @@ if [ -z "$SITE_PLAYBOOK" ]; then
 fi
 
 # Run the playbook with inventory
-~/.local/bin/ansible-playbook -i /tmp/homelab-bootstrap/inventory /tmp/homelab-bootstrap/homelab/site.yml --ask-become-pass
+~/.local/bin/ansible-playbook -i /tmp/homelab-bootstrap/inventory /tmp/homelab-bootstrap/homelab/site.yml
