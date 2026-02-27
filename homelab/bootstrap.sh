@@ -23,6 +23,15 @@ else
     cd "$DIR"
 fi
 
+REQUIREMENTS_FILE=$(find "$DIR" -name "requirements.yml" | head -n 1)
+if [ -n "$REQUIREMENTS_FILE" ]; then
+    echo "Installing Ansible roles from $REQUIREMENTS_FILE..."
+    ~/.local/bin/ansible-galaxy install -r "$REQUIREMENTS_FILE"
+else
+    echo "No requirements.yml found. Installing geerlingguy.docker manually..."
+    ~/.local/bin/ansible-galaxy install geerlingguy.docker
+fi
+
 # Find the first site.yml in the repo
 SITE_PLAYBOOK=$(find "$DIR" -name "site.yml" | head -n 1)
 if [ -z "$SITE_PLAYBOOK" ]; then
@@ -31,4 +40,5 @@ if [ -z "$SITE_PLAYBOOK" ]; then
 fi
 
 # Run the playbook with inventory
-~/.local/bin/ansible-playbook -i /tmp/homelab-bootstrap/inventory /tmp/homelab-bootstrap/homelab/site.yml
+# (Updated to use the dynamic $SITE_PLAYBOOK variable instead of the hardcoded path)
+~/.local/bin/ansible-playbook -i "$DIR/inventory" "$SITE_PLAYBOOK"
