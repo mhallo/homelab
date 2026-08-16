@@ -1,0 +1,28 @@
+services:
+  sd-import-watcher:
+    image: alpine:latest
+    container_name: sd-import-watcher
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache rsync >/dev/null 2>&1
+        LOG=/var/log/sd-import.log
+        echo "$(date): sd-import-watcher started" >> "$LOG"
+        while true; do
+          for dev in /mnt/@usb/*/; do
+            if [ -d "$dev" ]; then
+              for dcim in "$dev"DCIM/*/; do
+                if [ -d "$dcim" ]; then
+                  echo "$(date): checking $dcim" >> "$LOG"
+                  rsync -av --ignore-existing --exclude="._*" --exclude=".DS_Store" "$dcim" /photos/Leica/ >> "$LOG" 2>&1
+                fi
+              done
+            fi
+          done
+          sleep 300
+        done
+    volumes:
+      - /mnt/@usb:/mnt/@usb:ro
+      - /volume1/Photos/Leica:/photos/Leica
+      - /volume1/Software/Docker-Appdata/sd-import-watcher:/var/log
+    restart: unless-stopped
