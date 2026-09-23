@@ -1,0 +1,124 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/jellyfin:/config
+      - /volume1/Media:/mnt/storage:ro
+    ports:
+      - "8096:8096"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"
+      - "105"
+    restart: unless-stopped
+    networks: [media]
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/prowlarr:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+    networks: [media]
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/sonarr:/config
+      - /volume1/Media:/mnt/storage
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+    networks: [media]
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/radarr:/config
+      - /volume1/Media:/mnt/storage
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+    networks: [media]
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/lidarr:/config
+      - /volume1/Media:/mnt/storage
+    ports:
+      - "8686:8686"
+    restart: unless-stopped
+    networks: [media]
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - TZ=America/Los_Angeles
+    volumes:
+      - /volume1/Software/Docker-Appdata/jellyseerr:/app/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+    networks: [media]
+
+  decypharr:
+    image: cy01/blackhole:latest
+    container_name: decypharr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+      - DEBRIDS__0__PROVIDER=realdebrid
+      - DEBRIDS__0__NAME=RealDebrid
+      - DEBRIDS__0__API_KEY=${RD_API_KEY}
+      - MOUNT__TYPE=rclone
+      - MOUNT__MOUNT_PATH=/mnt/decypharr
+      - MOUNT__RCLONE__CACHE_DIR=/cache/rclone
+    volumes:
+      - /volume1/Software/Docker-Appdata/decypharr:/app
+      - /volume1/Software/Docker-Appdata/decypharr-cache:/cache
+      - /volume1/Media:/mnt/storage:rshared
+    ports:
+      - "8282:8282"
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    restart: unless-stopped
+    networks: [media]
+
+networks:
+  media:
+    name: media-net
+    driver: bridge

@@ -1,0 +1,27 @@
+http:
+  middlewares:
+
+    # Applied globally to the websecure entrypoint (see traefik.yml).
+    security-headers:
+      headers:
+        frameDeny: false               # some apps (Immich) use iframes
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+
+    # Optional: protect the Traefik dashboard with basic auth.
+    #
+    # The dashboard reveals your full routing table, so even on LAN it is
+    # worth locking. To enable:
+    #   1. Generate a hash:  htpasswd -nbB admin 'yourpassword'
+    #      (or: docker run --rm httpd:alpine htpasswd -nbB admin 'yourpassword')
+    #   2. Paste the admin:$2y$... line below, doubling every $ to $$
+    #   3. Uncomment this block AND the middleware line on the dashboard
+    #      router in routes.yml
+    #
+    # dashboard-auth:
+    #   basicAuth:
+    #     users:
+    #       - "admin:$$2y$$05$$replace.this.with.your.own.bcrypt.hash"

@@ -1,0 +1,59 @@
+# Traefik STATIC configuration.
+# Changes here require a container restart (Portainer redeploy does this).
+
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  # Dashboard is served through the router in dynamic/routes.yml,
+  # never on an exposed insecure port.
+  insecure: false
+
+ping: {}
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      middlewares:
+        - security-headers@file
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true          # hot-reload route changes, no restart needed
+
+certificatesResolvers:
+  cloudflare:
+    acme:
+      # Overridden by ACME_EMAIL if you templatize this; otherwise edit here.
+      email: you@example.com
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        # Resolve against public DNS directly. Required because your LAN
+        # resolver may not see the _acme-challenge TXT record propagate.
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+        delayBeforeCheck: 10
+
+log:
+  level: INFO
+
+accessLog:
+  filters:
+    statusCodes:
+      - "400-499"
+      - "500-599"

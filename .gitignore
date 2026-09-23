@@ -1,0 +1,21 @@
+# ---- secrets: never commit ----
+.env
+*.env
+!.env.example
+stack.env
+secrets/
+*.key
+*.pem
+
+# ---- ACME / TLS state ----
+acme.json
+letsencrypt/
+certs/
+
+# ---- runtime state that must never be in git ----
+tailscale-state/
+**/tailscale-state/
+
+# ---- noise ----
+.DS_Store
+*.swp

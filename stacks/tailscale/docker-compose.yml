@@ -1,0 +1,61 @@
+# ---------------------------------------------------------------------------
+# DO NOT DEPLOY THIS FROM GIT WITHOUT READING THIS FIRST.
+#
+# Two differences from what is running on the NAS today:
+#
+# 1. TS_AUTHKEY was hardcoded in plaintext in the live stack. It has been
+#    replaced with ${TS_AUTHKEY}. That variable does NOT currently exist in
+#    Portainer -- you must create it before deploying this, or Tailscale gets
+#    an empty auth key.
+#
+# 2. THE STATE DIRECTORY BELOW IS A RELATIVE PATH, and that is the real trap.
+#    './tailscale-state' resolves inside the stack's own project directory
+#    (/data/compose/<stack-id>/). Recreating this stack as a git-backed stack
+#    assigns a NEW stack id, so it starts with an EMPTY state directory.
+#    Tailscale then loses its node identity, re-authenticates from scratch,
+#    and needs a VALID TS_AUTHKEY -- the existing one may be single-use or
+#    expired. That is how you lose tailnet access to the NAS.
+#
+#    Before migrating this stack:
+#      a. Change the volume to an absolute path, e.g.
+#           /volume1/Software/Docker-Appdata/tailscale:/var/lib/tailscale
+#      b. Copy the existing state there FIRST:
+#           cp -a /data/compose/2/tailscale-state/. \
+#                 /volume1/Software/Docker-Appdata/tailscale/
+#      c. Generate a fresh auth key in the Tailscale admin console and set it
+#         as TS_AUTHKEY in Portainer, as a fallback.
+#      d. Have a non-Tailscale route to the NAS available (LAN) while you do it.
+#
+#    Restarting the stack IN PLACE is safe and does not need any of this --
+#    the trap only applies to recreating it under a new stack id.
+#
+# Migrate this stack LAST, after the others have proven the pattern.
+# ---------------------------------------------------------------------------
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: tailscale-nginx
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      # See warning above before changing this to an absolute path.
+      - ./tailscale-state:/var/lib/tailscale
+    cap_add:
+      - net_admin
+      - net_raw
+    network_mode: host
+    restart: unless-stopped
+
+  # This plain nginx predates Traefik and is superseded by it.
+  # Left running deliberately -- remove it only once Traefik is proven.
+  nginx:
+    image: nginx:latest
+    container_name: nginx_server
+    ports:
+      - "8080:80"
+    depends_on:
+      - tailscale
+    restart: unless-stopped
