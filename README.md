@@ -1,6 +1,78 @@
 # Homelab
-Provisioning and GitOps for my homelab
+
+Provisioning and GitOps for my homelab. GitHub is the source of truth; Portainer
+on the NAS deploys from this repo.
+
+## Layout
+
+```
+homelab/            Ansible provisioning for a fresh compute node
+stacks/             One directory per Portainer stack
+  traefik/          Reverse proxy for *.gt3.dev  (deploy git-backed)
+    config/
+      traefik.yml           static config (restart to apply)
+      dynamic/
+        routes.yml          >>> EDIT THIS to add a service <<<
+        tls.yml             wildcard cert definition
+        middlewares.yml     security headers, optional dashboard auth
+  immich/
+  media-stack/
+  tailscale/        see the warning at the top of its compose file
+  sd-import-watcher/
+```
 
 ## Provisioning
 
 `curl -fsSL https://raw.githubusercontent.com/mhallo/homelab/refs/heads/main/homelab/bootstrap.sh | bash`
+
+## Networking model
+
+`*.gt3.dev` resolves to the NAS's LAN IP (`10.10.2.10`) via a public wildcard
+A record on Cloudflare, grey-clouded (DNS only, not proxied).
+
+This makes every service LAN-reachable and nothing internet-reachable: outside
+the network the name resolves to a private IP that does not exist on the public
+internet. No ports are forwarded. Remote access stays with Tailscale; enabling
+subnet routing for `10.10.2.0/24` makes the same hostnames work remotely.
+
+TLS is a real Let's Encrypt wildcard for `*.gt3.dev`, obtained via the
+Cloudflare DNS-01 challenge. Validation is a TXT record, so no inbound
+connection to the NAS is required.
+
+### Why the file provider instead of Docker labels
+
+Traefik routes to services by host IP and published port, not by Docker
+discovery. This means:
+
+- no existing stack needs editing, joining a shared network, or redeploying
+- Traefik does not mount `docker.sock`, so it holds no Docker privileges
+- the whole routing table is one reviewable file in git
+
+Trade-off: new services are added manually in `routes.yml` rather than being
+auto-discovered. For a stable service list this is the better trade.
+
+## Adding a service
+
+1. Add a router + service entry in `stacks/traefik/config/dynamic/routes.yml`
+2. `git commit && git push`
+3. Portainer pulls, Traefik hot-reloads
+
+No DNS change is ever needed -- the wildcard already covers every hostname.
+
+## Secrets
+
+Secrets are **never** committed. Compose files reference `${VAR}`; the values
+are set per-stack in Portainer's *Environment variables* section and stored on
+the NAS.
+
+See `.env.example` for which variables each stack requires. That file is
+documentation only -- git-backed stacks in Portainer do not read it.
+
+## Conventions
+
+- **Bind mounts for state must be absolute paths.** A relative path resolves
+  inside the stack's project directory (`/data/compose/<stack-id>/`), which
+  changes if the stack is ever recreated -- silently losing the data. The
+  `tailscale` stack currently violates this; see its compose file.
+- Config that should come from git may use relative paths, since it is
+  reproducible from the repo.

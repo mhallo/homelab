@@ -1,0 +1,43 @@
+# Traefik reverse proxy for *.gt3.dev (LAN-only)
+#
+# Routing model: FILE PROVIDER, not Docker labels.
+# Traefik proxies to services by host IP + published port, so no existing
+# stack has to be modified, joined to a shared network, or redeployed.
+# Adding a service = adding ~6 lines to config/dynamic/routes.yml.
+#
+# Traefik deliberately does NOT mount /var/run/docker.sock. It has zero
+# Docker privileges, so compromising it does not yield root on the NAS.
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+
+    ports:
+      - "80:80"     # redirects to 443
+      - "443:443"
+
+    environment:
+      # Set these in Portainer's "Environment variables" for this stack.
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+
+    volumes:
+      # Config comes FROM GIT (relative path = this repo's checkout).
+      # Push a routes change -> Portainer pulls -> Traefik picks it up.
+      - ./config:/etc/traefik:ro
+
+      # ACME state must be ABSOLUTE so it survives stack recreation.
+      # If this were relative, recreating the stack would lose acme.json and
+      # re-request certificates -- Let's Encrypt allows only 5 duplicate certs
+      # per week, so losing it can lock you out of new certs for days.
+      - /volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt
+
+    security_opt:
+      - no-new-privileges:true
+
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,47 @@
+# Copied verbatim from the LIVE stack on the NAS (Portainer stack id 6).
+# The previously tracked portainer/sd-copier.yaml was an older revision and
+# has been replaced by this file. Differences the old copy was missing:
+#   - status.txt / "SAFE TO DETACH" reporting
+#   - 60s poll interval (was 300s)
+services:
+  sd-import-watcher:
+    image: alpine:latest
+    container_name: sd-import-watcher
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache rsync >/dev/null 2>&1
+        LOG=/var/log/sd-import.log
+        STATUS=/var/log/status.txt
+        echo "$(date): sd-import-watcher started" >> "$LOG"
+        while true; do
+          FOUND_DEVICE=0
+          for dev in /mnt/@usb/*/; do
+            if [ -d "$dev" ]; then
+              FOUND_DEVICE=1
+              for dcim in "$dev"DCIM/*/; do
+                if [ -d "$dcim" ]; then
+                  echo "$(date): checking $dcim" >> "$LOG"
+                  rsync -av --ignore-existing --exclude="._*" --exclude=".DS_Store" "$dcim" /photos/Leica/ >> "$LOG" 2>&1
+                  SRC_COUNT=$(find "$dcim" -type f ! -name '._*' ! -name '.DS_Store' | wc -l)
+                  DST_COUNT=$(find /photos/Leica -type f -name '*' | wc -l)
+                  if [ "$SRC_COUNT" -le "$DST_COUNT" ]; then
+                    echo "$(date): SAFE TO DETACH - card fully copied ($SRC_COUNT files on card, all present on NAS)" | tee "$STATUS" >> "$LOG"
+                  else
+                    REMAINING=$((SRC_COUNT - DST_COUNT))
+                    echo "$(date): NOT SAFE YET - still copying, ~$REMAINING files remaining" | tee "$STATUS" >> "$LOG"
+                  fi
+                fi
+              done
+            fi
+          done
+          if [ "$FOUND_DEVICE" -eq 0 ]; then
+            echo "no card inserted" > "$STATUS"
+          fi
+          sleep 60
+        done
+    volumes:
+      - /mnt/@usb:/mnt/@usb:ro
+      - /volume1/Photos/Leica:/photos/Leica
+      - /volume1/Software/Docker-Appdata/sd-import-watcher:/var/log
+    restart: unless-stopped
