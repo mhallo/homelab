@@ -37,8 +37,12 @@ providers:
 certificatesResolvers:
   cloudflare:
     acme:
-      # Overridden by ACME_EMAIL if you templatize this; otherwise edit here.
-      email: you@example.com
+      # Traefik's static config sources (file / CLI / env) are MUTUALLY
+      # EXCLUSIVE, so this cannot be an ${ENV_VAR} while this file is in use.
+      # It is therefore committed in the clear -- which is why it is an alias
+      # on our own domain, forwarded via Cloudflare Email Routing, and not a
+      # personal address. Let's Encrypt only uses it for expiry notices.
+      email: acme@gt3.dev
       storage: /letsencrypt/acme.json
       dnsChallenge:
         provider: cloudflare
