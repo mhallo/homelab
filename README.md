@@ -49,10 +49,9 @@ auto-discovered. For a stable service list this is the better trade.
 
 ## Adding a service
 
-1. **Deploy the container** as usual, publishing a port on the host.
+1. Deploy the container, publishing a port on the host.
 
-2. **Add two entries** to `stacks/traefik/dynamic/routes.yml` -- a router
-   (hostname to service name) and a service (service name to upstream URL):
+2. Add a router and a service to `stacks/traefik/dynamic/routes.yml`:
 
    ```yaml
    http:
@@ -69,55 +68,52 @@ auto-discovered. For a stable service list this is the better trade.
              - url: "http://10.10.2.10:PORT"
    ```
 
-3. **Commit and push**, then merge to `main`.
+3. Push and merge to `main`.
 
-4. **In Portainer**, open the `traefik` stack and use **Pull and redeploy**
-   with **Re-pull image and redeploy** enabled.
+4. In Portainer, open the `traefik` stack, hit Pull and redeploy, and tick
+   "Re-pull image and redeploy".
 
-5. **Verify**: `curl -sI https://newthing.gt3.dev | head -1`
-   Any 2xx or 3xx means it routed. A 404 from Traefik means no router matched
-   the hostname -- check for a typo in the rule.
+5. Check it: `curl -sI https://newthing.gt3.dev | head -1`
 
-No DNS record and no certificate work is ever needed. The `*.gt3.dev` wildcard
-already resolves every hostname to the NAS, and the wildcard certificate
-already covers them.
+   2xx or 3xx means it routed. 404 means no router matched the hostname, so
+   check the rule for a typo.
 
-### Always force the recreate
+No DNS or cert work. The `*.gt3.dev` wildcard covers every hostname already.
 
-Step 4 is not optional. When a git stack updates to a new commit, Portainer
-deletes and re-clones the repository directory on the host. Existing containers
-keep pointing at the directory that was replaced, so the bind mount goes
-silently empty and Traefik loses all routing -- running, healthy, serving
-nothing. Forcing a recreate remounts against the new checkout.
+### Force the recreate
 
-See https://docs.portainer.io/faqs/troubleshooting/stacks-deployments-and-updates/empty-relative-bind-mounts
+Step 4 matters. Updating a git stack makes Portainer delete and re-clone the
+repo directory on the host. Containers that aren't recreated stay pointed at
+the old directory, so the mount goes empty and Traefik serves nothing -- still
+running, no errors anywhere. Forcing the recreate remounts it.
 
-### Where the routing config actually lives
+https://docs.portainer.io/faqs/troubleshooting/stacks-deployments-and-updates/empty-relative-bind-mounts
 
-The Traefik stack mounts its dynamic config from Portainer's own git checkout,
-by that checkout's **host** path:
+### Where routes.yml comes from
+
+Traefik mounts its dynamic config out of Portainer's git checkout, using the
+host path:
 
 ```
 /volume1/docker/portainer/compose/11/stacks/traefik/dynamic
 ```
 
-Portainer clones to `/data/compose/<stackId>/` inside its own container, but
-the Docker daemon resolves bind mounts against the host filesystem, where that
-path does not exist -- it silently creates an empty directory instead. Since
-Portainer's `/data` is bind-mounted from `/volume1/docker/portainer`, the host
-path above is the same directory addressed the way the daemon sees it.
+Portainer clones to `/data/compose/<stackId>/` inside its own container. The
+Docker daemon resolves bind mounts on the host, where that path doesn't exist,
+so it creates an empty directory instead of failing. Portainer's `/data` comes
+from `/volume1/docker/portainer`, so the path above is the same directory the
+daemon can actually see.
 
-The `11` is this stack's id. **Deleting and recreating the traefik stack
-changes it**, which breaks the mount in exactly the same invisible way. If
-routing ever stops working after a redeploy, check this first:
+The `11` is the stack id. Delete and recreate the traefik stack and it changes,
+which breaks the mount the same silent way. If routing dies after a redeploy,
+start here:
 
 ```
 docker exec traefik ls /etc/traefik/dynamic    # should list routes.yml
 ```
 
-Moving the container services to Docker labels would remove this dependency
-entirely; it would also require every stack to join a shared network and
-Traefik to mount `docker.sock`.
+Docker labels would drop this dependency, at the cost of putting every stack on
+a shared network and giving Traefik the docker socket.
 
 ## Secrets
 
