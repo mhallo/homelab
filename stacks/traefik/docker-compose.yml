@@ -27,14 +27,7 @@ services:
     environment:
       - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
     volumes:
-      # Portainer's git checkout, by its HOST path. Portainer writes the repo
-      # to /data/compose/<stackId>/ inside its own container; the Docker daemon
-      # resolves bind mounts on the host, where that path does not exist -- it
-      # silently creates an empty dir instead. /data is bind-mounted from
-      # /volume1/docker/portainer, so this is the same directory, addressed the
-      # way the daemon sees it.
-      # NOTE: the "11" is this stack's id. Recreating the stack changes it and
-      # breaks this mount silently. Moving routing to Docker labels removes the
-      # dependency entirely.
+      # Portainer's checkout by host path. "11" is the stack id -- recreating
+      # the stack changes it and breaks this mount silently.
       - "/volume1/docker/portainer/compose/11/stacks/traefik/dynamic:/etc/traefik/dynamic:ro"
       - "/volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt"
