@@ -1,109 +1,73 @@
-# ---------------------------------------------------------------------------
-# ROUTING TABLE  --  this is the file you edit to add a service.
-#
-# All upstreams point at the NAS's LAN IP + the port the container already
-# publishes. Nothing here requires touching the service's own stack.
-#
-# TO ADD A NEW SERVICE:
-#   1. Add a router under http.routers  (the hostname -> service mapping)
-#   2. Add a service under http.services (the upstream URL)
-#   3. git commit && git push
-#   4. Portainer pulls; Traefik hot-reloads. No DNS change needed -- the
-#      *.gt3.dev wildcard already resolves every name.
-#
-# NOTE: Traefik's file provider does not expand environment variables, so the
-# NAS IP is written literally. If the NAS IP ever changes, update it here.
-# ---------------------------------------------------------------------------
+# Add a service: one entry under routers, one under services. Traefik
+# hot-reloads this file. The *.gt3.dev wildcard already resolves every name.
 
 http:
   routers:
-
-    # ---- infrastructure -------------------------------------------------
     traefik-dashboard:
       rule: "Host(`traefik.gt3.dev`)"
       service: api@internal
       entryPoints: [websecure]
-      tls: {}
-      # Uncomment after configuring dashboard-auth in middlewares.yml:
-      # middlewares:
-      #   - dashboard-auth@file
 
     portainer:
       rule: "Host(`portainer.gt3.dev`)"
       service: portainer
       entryPoints: [websecure]
-      tls: {}
 
-    # ---- photos ---------------------------------------------------------
+    nas:
+      rule: "Host(`nas.gt3.dev`)"
+      service: nas
+      entryPoints: [websecure]
+
     immich:
       rule: "Host(`immich.gt3.dev`)"
       service: immich
       entryPoints: [websecure]
-      tls: {}
 
-    # ---- media ----------------------------------------------------------
     jellyfin:
       rule: "Host(`jellyfin.gt3.dev`)"
       service: jellyfin
       entryPoints: [websecure]
-      tls: {}
 
     jellyseerr:
       rule: "Host(`requests.gt3.dev`)"
       service: jellyseerr
       entryPoints: [websecure]
-      tls: {}
 
     sonarr:
       rule: "Host(`sonarr.gt3.dev`)"
       service: sonarr
       entryPoints: [websecure]
-      tls: {}
 
     radarr:
       rule: "Host(`radarr.gt3.dev`)"
       service: radarr
       entryPoints: [websecure]
-      tls: {}
 
     lidarr:
       rule: "Host(`lidarr.gt3.dev`)"
       service: lidarr
       entryPoints: [websecure]
-      tls: {}
 
     prowlarr:
       rule: "Host(`prowlarr.gt3.dev`)"
       service: prowlarr
       entryPoints: [websecure]
-      tls: {}
 
     decypharr:
       rule: "Host(`decypharr.gt3.dev`)"
       service: decypharr
       entryPoints: [websecure]
-      tls: {}
-
-    # ---- NAS admin UI ---------------------------------------------------
-    # UGOS serves its web UI on 9999 (HTTP) / 9443 (HTTPS), set under
-    # Control Panel > Device Connection > Portal settings.
-    #
-    # We proxy the HTTP port rather than HTTPS: UGOS presents a self-signed
-    # certificate on 9443, which Traefik would reject without an explicit
-    # insecureSkipVerify serversTransport. The Traefik -> UGOS hop never
-    # leaves the NAS, and the browser still gets real TLS from Traefik.
-    nas:
-      rule: "Host(`nas.gt3.dev`)"
-      service: nas
-      entryPoints: [websecure]
-      tls: {}
 
   services:
-
     portainer:
       loadBalancer:
         servers:
           - url: "http://10.10.2.10:9000"
+
+    nas:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.2.10:9999"
 
     immich:
       loadBalancer:
@@ -144,8 +108,3 @@ http:
       loadBalancer:
         servers:
           - url: "http://10.10.2.10:8282"
-
-    nas:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:9999"

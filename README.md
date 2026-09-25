@@ -9,11 +9,8 @@ on the NAS deploys from this repo.
 homelab/            Ansible provisioning for a fresh compute node
 stacks/             One directory per Portainer stack
   traefik/          Reverse proxy for *.gt3.dev
-    docker-compose.yml      static config lives here, as command flags
-    dynamic/
-      routes.yml            >>> EDIT THIS to add a service <<<
-      tls.yml               wildcard cert definition
-      middlewares.yml       security headers, optional dashboard auth
+    docker-compose.yml      static config, as command flags
+    dynamic/routes.yml      >>> EDIT THIS to add a service <<<
   immich/
   media-stack/
   tailscale/        see the warning at the top of its compose file
@@ -92,16 +89,12 @@ After that the NAS UI is reached at `:9999` / `:9443`, or through
 
 ## Static vs dynamic config
 
-Traefik's static configuration (entrypoints, providers, ACME) is set as
-`command:` flags in `docker-compose.yml`, following Traefik's own example.
-It is deliberately **not** a mounted `traefik.yml`: a missing mount makes
-Traefik fall back to built-in defaults with no entrypoints, no resolver and no
-providers, while still looking healthy. Flags ship with the compose file and
-cannot go missing.
+Static config (entrypoints, providers, ACME, the wildcard certificate) is set
+as `command:` flags. Do not add a `traefik.yml` back -- Traefik's static config
+sources are mutually exclusive, so the file would silently disable every flag.
 
-Traefik's static configuration sources -- file, CLI flags and environment
-variables -- are mutually exclusive, so adding a `traefik.yml` back would
-silently disable every flag above.
+Dynamic config is `dynamic/routes.yml` only. Traefik watches it and reloads on
+change.
 
 ## Conventions
 

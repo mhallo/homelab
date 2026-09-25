@@ -1,28 +1,3 @@
-# Based on Traefik's canonical Docker Compose example:
-# https://doc.traefik.io/traefik/expose/docker/basic/
-#
-# Changes from upstream, and why each one is needed here:
-#
-#  - image pinned to v3.3 rather than v3.4. This is the version already pulled
-#    and running on the NAS; not worth changing two things at once. Bump later.
-#  - docker provider removed (and with it docker.sock, the `proxy` network and
-#    the dashboard labels). We use the file provider so the four stacks already
-#    running do not need editing, and so Traefik holds no Docker privileges.
-#    The dashboard router lives in dynamic/routes.yml instead of in labels.
-#  - ACME added via Cloudflare DNS-01. Upstream demonstrates self-signed certs;
-#    we need a real wildcard for *.gt3.dev. DNS-01 validates with a TXT record,
-#    so it works with nothing exposed to the internet.
-#  - ./certs replaced by a letsencrypt mount for acme.json.
-#  - 8080 no longer published. With api.insecure=false nothing serves there,
-#    and the dashboard is reached through websecure.
-#  - mount paths are absolute rather than ./dynamic. Relative paths resolve
-#    against the deploying tool's working directory, which under Portainer is
-#    not the repo checkout -- Docker then silently creates an empty directory
-#    and Traefik starts with no configuration at all.
-#
-# PREREQUISITE: UGOS holds ports 80/443. Disable both redirects under
-# Control Panel > Device Connection > Portal settings > Web service.
-
 services:
   traefik:
     image: "traefik:v3.3"
@@ -38,6 +13,9 @@ services:
       - "--entryPoints.web.address=:80"
       - "--entryPoints.websecure.address=:443"
       - "--entryPoints.websecure.http.tls=true"
+      - "--entryPoints.websecure.http.tls.certResolver=cloudflare"
+      - "--entryPoints.websecure.http.tls.domains[0].main=gt3.dev"
+      - "--entryPoints.websecure.http.tls.domains[0].sans=*.gt3.dev"
       - "--certificatesresolvers.cloudflare.acme.dnschallenge=true"
       - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.cloudflare.acme.email=acme@gt3.dev"
