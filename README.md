@@ -1,12 +1,11 @@
 # Homelab
 
-Provisioning and GitOps for my homelab. GitHub is the source of truth; Portainer
-on the NAS deploys from this repo.
+GitOps for my homelab. GitHub is the source of truth; Portainer on the NAS
+deploys from this repo.
 
 ## Layout
 
 ```
-homelab/            Ansible provisioning for a fresh compute node
 stacks/             One directory per Portainer stack
   traefik/          Reverse proxy for *.gt3.dev
     docker-compose.yml      static config, as command flags
@@ -16,10 +15,6 @@ stacks/             One directory per Portainer stack
   tailscale/        see the warning at the top of its compose file
   sd-import-watcher/
 ```
-
-## Provisioning
-
-`curl -fsSL https://raw.githubusercontent.com/mhallo/homelab/refs/heads/main/homelab/bootstrap.sh | bash`
 
 ## Networking model
 
