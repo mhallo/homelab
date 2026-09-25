@@ -85,15 +85,18 @@ http:
       tls: {}
 
     # ---- NAS admin UI ---------------------------------------------------
-    # TODO: confirm the UGOS web UI port before enabling.
-    # Port 80/443 are free, so UGOS is on something else (often 9999).
-    # Check in UGOS settings, then uncomment both halves.
+    # UGOS serves its web UI on 9999 (HTTP) / 9443 (HTTPS), set under
+    # Control Panel > Device Connection > Portal settings.
     #
-    # nas:
-    #   rule: "Host(`nas.gt3.dev`)"
-    #   service: nas
-    #   entryPoints: [websecure]
-    #   tls: {}
+    # We proxy the HTTP port rather than HTTPS: UGOS presents a self-signed
+    # certificate on 9443, which Traefik would reject without an explicit
+    # insecureSkipVerify serversTransport. The Traefik -> UGOS hop never
+    # leaves the NAS, and the browser still gets real TLS from Traefik.
+    nas:
+      rule: "Host(`nas.gt3.dev`)"
+      service: nas
+      entryPoints: [websecure]
+      tls: {}
 
   services:
 
@@ -142,7 +145,7 @@ http:
         servers:
           - url: "http://10.10.2.10:8282"
 
-    # nas:
-    #   loadBalancer:
-    #     servers:
-    #       - url: "http://10.10.2.10:9999"
+    nas:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.2.10:9999"

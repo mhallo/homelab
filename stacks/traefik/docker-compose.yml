@@ -7,6 +7,21 @@
 #
 # Traefik deliberately does NOT mount /var/run/docker.sock. It has zero
 # Docker privileges, so compromising it does not yield root on the NAS.
+#
+# PREREQUISITE -- UGOS holds ports 80/443 by default.
+# UGOS runs its own nginx bound to 0.0.0.0:80 and 0.0.0.0:443, purely to
+# offer portless redirects to its web UI (which actually lives on 9999/9443).
+# Deploying this stack fails with "address already in use" until those
+# redirects are turned off:
+#
+#   Control Panel > Device Connection > Portal settings > Web service
+#     [ ] Redirect port 80 to HTTP port
+#     [ ] Redirect port 443 to HTTPS port
+#   Apply.
+#
+# The NAS UI is then reached at :9999 / :9443 directly, or via nas.gt3.dev
+# once this stack is running. A UGOS update may re-enable these -- if Traefik
+# suddenly fails to start after an update, check here first.
 
 services:
   traefik:

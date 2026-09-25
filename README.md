@@ -68,6 +68,20 @@ the NAS.
 See `.env.example` for which variables each stack requires. That file is
 documentation only -- git-backed stacks in Portainer do not read it.
 
+## Port 80/443 on the NAS
+
+UGOS ships an nginx bound to `0.0.0.0:80` and `0.0.0.0:443` that exists only
+to provide portless redirects to its web UI, which actually runs on 9999
+(HTTP) and 9443 (HTTPS). Traefik cannot bind those ports until the redirects
+are disabled:
+
+> Control Panel → Device Connection → Portal settings → Web service
+> uncheck **Redirect port 80 to HTTP port** and **Redirect port 443 to HTTPS
+> port**, then Apply.
+
+After that the NAS UI is reached at `:9999` / `:9443`, or through
+`nas.gt3.dev` once Traefik is up.
+
 ## Conventions
 
 - **Bind mounts for state must be absolute paths.** A relative path resolves
