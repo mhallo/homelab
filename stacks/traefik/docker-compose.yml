@@ -1,58 +1,52 @@
-# Traefik reverse proxy for *.gt3.dev (LAN-only)
+# Based on Traefik's canonical Docker Compose example:
+# https://doc.traefik.io/traefik/expose/docker/basic/
 #
-# Routing model: FILE PROVIDER, not Docker labels.
-# Traefik proxies to services by host IP + published port, so no existing
-# stack has to be modified, joined to a shared network, or redeployed.
-# Adding a service = adding ~6 lines to config/dynamic/routes.yml.
+# Changes from upstream, and why each one is needed here:
 #
-# Traefik deliberately does NOT mount /var/run/docker.sock. It has zero
-# Docker privileges, so compromising it does not yield root on the NAS.
+#  - image pinned to v3.3 rather than v3.4. This is the version already pulled
+#    and running on the NAS; not worth changing two things at once. Bump later.
+#  - docker provider removed (and with it docker.sock, the `proxy` network and
+#    the dashboard labels). We use the file provider so the four stacks already
+#    running do not need editing, and so Traefik holds no Docker privileges.
+#    The dashboard router lives in dynamic/routes.yml instead of in labels.
+#  - ACME added via Cloudflare DNS-01. Upstream demonstrates self-signed certs;
+#    we need a real wildcard for *.gt3.dev. DNS-01 validates with a TXT record,
+#    so it works with nothing exposed to the internet.
+#  - ./certs replaced by a letsencrypt mount for acme.json.
+#  - 8080 no longer published. With api.insecure=false nothing serves there,
+#    and the dashboard is reached through websecure.
+#  - mount paths are absolute rather than ./dynamic. Relative paths resolve
+#    against the deploying tool's working directory, which under Portainer is
+#    not the repo checkout -- Docker then silently creates an empty directory
+#    and Traefik starts with no configuration at all.
 #
-# PREREQUISITE -- UGOS holds ports 80/443 by default.
-# UGOS runs its own nginx bound to 0.0.0.0:80 and 0.0.0.0:443, purely to
-# offer portless redirects to its web UI (which actually lives on 9999/9443).
-# Deploying this stack fails with "address already in use" until those
-# redirects are turned off:
-#
-#   Control Panel > Device Connection > Portal settings > Web service
-#     [ ] Redirect port 80 to HTTP port
-#     [ ] Redirect port 443 to HTTPS port
-#   Apply.
-#
-# The NAS UI is then reached at :9999 / :9443 directly, or via nas.gt3.dev
-# once this stack is running. A UGOS update may re-enable these -- if Traefik
-# suddenly fails to start after an update, check here first.
+# PREREQUISITE: UGOS holds ports 80/443. Disable both redirects under
+# Control Panel > Device Connection > Portal settings > Web service.
 
 services:
   traefik:
-    image: traefik:v3.3
-    container_name: traefik
+    image: "traefik:v3.3"
+    container_name: "traefik"
     restart: unless-stopped
-
-    ports:
-      - "80:80"     # redirects to 443
-      - "443:443"
-
-    environment:
-      # Set these in Portainer's "Environment variables" for this stack.
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
-
-    volumes:
-      # Config comes FROM GIT (relative path = this repo's checkout).
-      # Push a routes change -> Portainer pulls -> Traefik picks it up.
-      - ./config:/etc/traefik:ro
-
-      # ACME state must be ABSOLUTE so it survives stack recreation.
-      # If this were relative, recreating the stack would lose acme.json and
-      # re-request certificates -- Let's Encrypt allows only 5 duplicate certs
-      # per week, so losing it can lock you out of new certs for days.
-      - /volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt
-
     security_opt:
       - no-new-privileges:true
-
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck", "--ping"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+    command:
+      - "--api.insecure=false"
+      - "--api.dashboard=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.websecure.http.tls=true"
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge=true"
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.cloudflare.acme.email=acme@gt3.dev"
+      - "--certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
+    volumes:
+      - "/volume1/Software/Docker-Appdata/traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "/volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt"

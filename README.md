@@ -8,13 +8,12 @@ on the NAS deploys from this repo.
 ```
 homelab/            Ansible provisioning for a fresh compute node
 stacks/             One directory per Portainer stack
-  traefik/          Reverse proxy for *.gt3.dev  (deploy git-backed)
-    config/
-      traefik.yml           static config (restart to apply)
-      dynamic/
-        routes.yml          >>> EDIT THIS to add a service <<<
-        tls.yml             wildcard cert definition
-        middlewares.yml     security headers, optional dashboard auth
+  traefik/          Reverse proxy for *.gt3.dev
+    docker-compose.yml      static config lives here, as command flags
+    dynamic/
+      routes.yml            >>> EDIT THIS to add a service <<<
+      tls.yml               wildcard cert definition
+      middlewares.yml       security headers, optional dashboard auth
   immich/
   media-stack/
   tailscale/        see the warning at the top of its compose file
@@ -53,11 +52,20 @@ auto-discovered. For a stable service list this is the better trade.
 
 ## Adding a service
 
-1. Add a router + service entry in `stacks/traefik/config/dynamic/routes.yml`
-2. `git commit && git push`
-3. Portainer pulls, Traefik hot-reloads
+1. Add a router + service entry in `stacks/traefik/dynamic/routes.yml`
+2. Copy the file to the NAS at
+   `/volume1/Software/Docker-Appdata/traefik/dynamic/`
+3. Traefik watches that directory and hot-reloads -- no redeploy, no downtime
 
 No DNS change is ever needed -- the wildcard already covers every hostname.
+
+### Why the dynamic config is copied rather than mounted from the repo
+
+Portainer deploys the compose file from git correctly, but relative bind
+mounts in that compose do not resolve to the repo checkout -- Docker silently
+creates an empty directory instead, and Traefik starts with no configuration
+while appearing to run normally. Absolute paths avoid that entirely. Automating
+the copy (a clone on the NAS plus a scheduled `git pull`) is a later task.
 
 ## Secrets
 
@@ -81,6 +89,19 @@ are disabled:
 
 After that the NAS UI is reached at `:9999` / `:9443`, or through
 `nas.gt3.dev` once Traefik is up.
+
+## Static vs dynamic config
+
+Traefik's static configuration (entrypoints, providers, ACME) is set as
+`command:` flags in `docker-compose.yml`, following Traefik's own example.
+It is deliberately **not** a mounted `traefik.yml`: a missing mount makes
+Traefik fall back to built-in defaults with no entrypoints, no resolver and no
+providers, while still looking healthy. Flags ship with the compose file and
+cannot go missing.
+
+Traefik's static configuration sources -- file, CLI flags and environment
+variables -- are mutually exclusive, so adding a `traefik.yml` back would
+silently disable every flag above.
 
 ## Conventions
 
