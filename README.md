@@ -49,20 +49,71 @@ auto-discovered. For a stable service list this is the better trade.
 
 ## Adding a service
 
-1. Add a router + service entry in `stacks/traefik/dynamic/routes.yml`
-2. Copy the file to the NAS at
-   `/volume1/Software/Docker-Appdata/traefik/dynamic/`
-3. Traefik watches that directory and hot-reloads -- no redeploy, no downtime
+1. Deploy the container, publishing a port on the host.
 
-No DNS change is ever needed -- the wildcard already covers every hostname.
+2. Add a router and a service to `stacks/traefik/dynamic/routes.yml`:
 
-### Why the dynamic config is copied rather than mounted from the repo
+   ```yaml
+   http:
+     routers:
+       newthing:
+         rule: "Host(`newthing.gt3.dev`)"
+         service: newthing
+         entryPoints: [websecure]
 
-Portainer deploys the compose file from git correctly, but relative bind
-mounts in that compose do not resolve to the repo checkout -- Docker silently
-creates an empty directory instead, and Traefik starts with no configuration
-while appearing to run normally. Absolute paths avoid that entirely. Automating
-the copy (a clone on the NAS plus a scheduled `git pull`) is a later task.
+     services:
+       newthing:
+         loadBalancer:
+           servers:
+             - url: "http://10.10.2.10:PORT"
+   ```
+
+3. Push and merge to `main`.
+
+4. In Portainer, open the `traefik` stack, hit Pull and redeploy, and tick
+   "Re-pull image and redeploy".
+
+5. Check it: `curl -sI https://newthing.gt3.dev | head -1`
+
+   2xx or 3xx means it routed. 404 means no router matched the hostname, so
+   check the rule for a typo.
+
+No DNS or cert work. The `*.gt3.dev` wildcard covers every hostname already.
+
+### Force the recreate
+
+Step 4 matters. Updating a git stack makes Portainer delete and re-clone the
+repo directory on the host. Containers that aren't recreated stay pointed at
+the old directory, so the mount goes empty and Traefik serves nothing -- still
+running, no errors anywhere. Forcing the recreate remounts it.
+
+https://docs.portainer.io/faqs/troubleshooting/stacks-deployments-and-updates/empty-relative-bind-mounts
+
+### Where routes.yml comes from
+
+Traefik mounts its dynamic config out of Portainer's git checkout, using the
+host path:
+
+```
+/volume1/docker/portainer/compose/11/stacks/traefik/dynamic
+```
+
+Portainer clones to `/data/compose/<stackId>/` inside its own container. The
+Docker daemon resolves bind mounts on the host, where that path doesn't exist,
+so it creates an empty directory instead of failing. Portainer's `/data` comes
+from `/volume1/docker/portainer`, so the path above is the same directory the
+daemon can actually see.
+
+The `11` is the stack id. Delete and recreate the traefik stack and it changes,
+which breaks the mount the same silent way. If routing dies after a redeploy,
+start here:
+
+```
+docker exec traefik ls /etc/traefik/dynamic    # should list routes.yml
+```
+
+Docker labels would drop this dependency, at the cost of putting every stack on
+a shared network and giving Traefik the docker socket.
 
 ## Secrets
 
