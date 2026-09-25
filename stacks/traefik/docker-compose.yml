@@ -20,11 +20,14 @@ services:
       - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.cloudflare.acme.email=acme@gt3.dev"
       - "--certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json"
+      - "--log.level=INFO"
     ports:
       - "80:80"
       - "443:443"
     environment:
       - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
     volumes:
-      - "/volume1/Software/Docker-Appdata/traefik/dynamic:/etc/traefik/dynamic:ro"
+      # Portainer's checkout by host path. "11" is the stack id -- recreating
+      # the stack changes it and breaks this mount silently.
+      - "/volume1/docker/portainer/compose/11/stacks/traefik/dynamic:/etc/traefik/dynamic:ro"
       - "/volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt"
