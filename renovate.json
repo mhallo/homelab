@@ -16,6 +16,19 @@
       "matchPackageNames": ["ghcr.io/immich-app/**"],
       "minimumReleaseAge": "7 days",
       "labels": ["immich", "read-release-notes"]
+    },
+    {
+      "description": "Sure runs one-way Rails migrations and releases often. Its own PR, after a release has settled.",
+      "matchPackageNames": ["ghcr.io/we-promise/**"],
+      "minimumReleaseAge": "7 days",
+      "labels": ["sure", "read-release-notes"]
+    },
+    {
+      "description": "A Postgres major can't read the previous major's data directory. That upgrade is a dump and restore, not a tag bump.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }
