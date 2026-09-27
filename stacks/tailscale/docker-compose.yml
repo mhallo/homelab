@@ -40,6 +40,9 @@ services:
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
+      # Advertises the LAN so tailnet devices can reach *.gt3.dev remotely.
+      # Needs approval in the Tailscale admin console, and ip_forward on the NAS.
+      - TS_ROUTES=10.10.2.0/24
     volumes:
       # See warning above before changing this to an absolute path.
       - ./tailscale-state:/var/lib/tailscale
