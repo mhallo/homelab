@@ -14,7 +14,6 @@ stacks/             One directory per Portainer stack
   immich/
   media-stack/
   tailscale/        see the warning at the top of its compose file
-  sd-import-watcher/
 ```
 
 ## Networking model
@@ -55,13 +54,12 @@ flowchart TB
         subgraph NAS["NAS · 10.10.2.10"]
             TSC["tailscale<br>host network<br>advertises 10.10.2.0/24"]
             TRAEFIK["traefik<br>:80 redirect → :443"]
-            PORT["portainer :9000"]
-            UGOS["UGOS web UI :9999"]
+            PORT["portainer :9000<br>routes.yml"]
+            UGOS["UGOS web UI :9999<br>routes.yml"]
 
-            subgraph STACKS["Portainer stacks"]
-                IMM["immich :2283<br>immich_server · postgres<br>redis · machine-learning"]
-                MED["media-stack<br>jellyfin :8096 · sonarr :8989<br>radarr :7878 · lidarr :8686<br>prowlarr :9696 · jellyseerr :5055<br>decypharr :8282"]
-                SD["sd-import-watcher<br>no published port"]
+            subgraph STACKS["proxy network — found via Docker labels"]
+                IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
+                MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr<br>jellyseerr · decypharr"]
             end
         end
 
