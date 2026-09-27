@@ -18,17 +18,80 @@ stacks/             One directory per Portainer stack
 
 ## Networking model
 
-`*.gt3.dev` resolves to the NAS's LAN IP (`10.10.2.10`) via a public wildcard
-A record on Cloudflare, grey-clouded (DNS only, not proxied).
+The NAS sits on its own VLAN, `10.10.2.0/24`, at `10.10.2.10`. That subnet is
+why everything below is scoped the way it is.
 
-This makes every service LAN-reachable and nothing internet-reachable: outside
-the network the name resolves to a private IP that does not exist on the public
-internet. No ports are forwarded. Remote access stays with Tailscale; enabling
-subnet routing for `10.10.2.0/24` makes the same hostnames work remotely.
+`*.gt3.dev` is a wildcard A record on Cloudflare pointing at `10.10.2.10`,
+grey-clouded so Cloudflare doesn't proxy it. Public DNS, private address: the
+names resolve from anywhere, but only go somewhere useful from inside the
+network. Nothing is port forwarded.
 
-TLS is a real Let's Encrypt wildcard for `*.gt3.dev`, obtained via the
-Cloudflare DNS-01 challenge. Validation is a TXT record, so no inbound
-connection to the NAS is required.
+TLS is a Let's Encrypt wildcard for `*.gt3.dev` via the Cloudflare DNS-01
+challenge. It validates with a TXT record, so nothing needs to be reachable
+from outside for certificates to issue or renew.
+
+### Network flow
+
+Both address ranges below are private and unroutable from the internet:
+`10.10.2.0/24` is RFC1918, `100.64.0.0/10` is the CGNAT space Tailscale uses.
+
+```mermaid
+flowchart TB
+    CF["Cloudflare DNS<br>*.gt3.dev → 10.10.2.10<br>DNS only, not proxied"]
+    LE["Let's Encrypt<br>DNS-01 TXT challenge"]
+
+    AWAY["Client away from home<br>tailnet 100.64.0.0/10"]
+    HOME["Client on the main LAN"]
+
+    UCG["Ubiquiti Cloud Gateway Fiber<br>WAN edge · VLANs · inter-VLAN routing<br>no ports forwarded"]
+
+    HOME -. "resolves" .-> CF
+    AWAY -. "resolves" .-> CF
+    HOME -- "https :443" --> UCG
+    UCG -- "routes into the VLAN" --> TRAEFIK
+
+    subgraph VLAN["VLAN 10.10.2.0/24 — private, RFC1918"]
+        subgraph NAS["NAS · 10.10.2.10"]
+            TSC["tailscale<br>host network<br>advertises 10.10.2.0/24"]
+            TRAEFIK["traefik<br>:80 redirect → :443"]
+            PORT["portainer :9000"]
+            UGOS["UGOS web UI :9999"]
+
+            subgraph STACKS["Portainer stacks"]
+                IMM["immich :2283<br>immich_server · postgres<br>redis · machine-learning"]
+                MED["media-stack<br>jellyfin :8096 · sonarr :8989<br>radarr :7878 · lidarr :8686<br>prowlarr :9696 · jellyseerr :5055<br>decypharr :8282"]
+                SD["sd-import-watcher<br>no published port"]
+            end
+        end
+
+        HP["HP EliteDesk mini<br>planned — joins as a swarm node"]
+    end
+
+    AWAY -- "subnet route" --> TSC
+    TSC --> TRAEFIK
+
+    TRAEFIK --> IMM
+    TRAEFIK --> MED
+    TRAEFIK --> PORT
+    TRAEFIK --> UGOS
+    TRAEFIK -. "planned" .-> HP
+    TRAEFIK -. "Cloudflare API writes TXT" .-> LE
+```
+
+### Getting to it from outside
+
+Tailscale. The NAS advertises `10.10.2.0/24` as a subnet route (`TS_ROUTES` in
+the tailscale stack), which puts the VLAN on the tailnet and makes the same
+hostnames work away from home.
+
+Two parts of that don't live in the compose file:
+
+- `ip_forward` has to be enabled on the NAS, in `/etc/sysctl.d/99-tailscale.conf`
+- the route has to be approved in the Tailscale admin console, under the
+  machine's subnets
+
+iOS and macOS pick up subnet routes on their own. Linux clients need
+`--accept-routes`.
 
 ### Why the file provider instead of Docker labels
 
