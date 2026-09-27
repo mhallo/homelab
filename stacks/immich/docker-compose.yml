@@ -23,6 +23,14 @@ services:
       - stack.env
     ports:
       - '2283:2283'
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.rule=Host(`immich.gt3.dev`)"
+      - "traefik.http.routers.immich.entrypoints=websecure"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
     depends_on:
       - redis
       - database
@@ -67,5 +75,9 @@ services:
     restart: always
     healthcheck:
       disable: false
+networks:
+  proxy:
+    external: true
+
 volumes:
   model-cache:

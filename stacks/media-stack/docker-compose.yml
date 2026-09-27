@@ -17,7 +17,12 @@ services:
       - "44"
       - "105"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.gt3.dev`)"
+      - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -31,7 +36,12 @@ services:
     ports:
       - "9696:9696"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.gt3.dev`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -46,7 +56,12 @@ services:
     ports:
       - "8989:8989"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.gt3.dev`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -61,7 +76,12 @@ services:
     ports:
       - "7878:7878"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.gt3.dev`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
 
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
@@ -76,7 +96,12 @@ services:
     ports:
       - "8686:8686"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.gt3.dev`)"
+      - "traefik.http.routers.lidarr.entrypoints=websecure"
+      - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
@@ -88,7 +113,12 @@ services:
     ports:
       - "5055:5055"
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyseerr.rule=Host(`requests.gt3.dev`)"
+      - "traefik.http.routers.jellyseerr.entrypoints=websecure"
+      - "traefik.http.services.jellyseerr.loadbalancer.server.port=5055"
 
   decypharr:
     image: cy01/blackhole:latest
@@ -116,9 +146,16 @@ services:
     security_opt:
       - apparmor:unconfined
     restart: unless-stopped
-    networks: [media]
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.decypharr.rule=Host(`decypharr.gt3.dev`)"
+      - "traefik.http.routers.decypharr.entrypoints=websecure"
+      - "traefik.http.services.decypharr.loadbalancer.server.port=8282"
 
 networks:
   media:
     name: media-net
     driver: bridge
+  proxy:
+    external: true
