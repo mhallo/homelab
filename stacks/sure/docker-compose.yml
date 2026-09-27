@@ -16,6 +16,11 @@ x-db-env: &db_env
 x-rails-env: &rails_env
   <<: *db_env
   SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+  # Encrypts bank/provider tokens, API keys and MFA secrets in Postgres.
+  # Losing or changing these makes that data unreadable.
+  ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+  ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+  ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
   SELF_HOSTED: "true"
   # Traefik terminates TLS and forwards plain HTTP.
   RAILS_FORCE_SSL: "false"
@@ -81,11 +86,14 @@ services:
       - postgres-data:/var/lib/postgresql/data
     environment:
       <<: *db_env
+    # start_period covers first-run initdb, which on the NAS takes longer than
+    # 5 retries x 5s. Without it the first deploy fails as "unhealthy".
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 60s
     restart: unless-stopped
 
   redis:
@@ -98,6 +106,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 60s
     restart: unless-stopped
 
 networks:
