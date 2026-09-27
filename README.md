@@ -30,6 +30,54 @@ TLS is a Let's Encrypt wildcard for `*.gt3.dev` via the Cloudflare DNS-01
 challenge. It validates with a TXT record, so nothing needs to be reachable
 from outside for certificates to issue or renew.
 
+### Network flow
+
+Both address ranges below are private and unroutable from the internet:
+`10.10.2.0/24` is RFC1918, `100.64.0.0/10` is the CGNAT space Tailscale uses.
+
+```mermaid
+flowchart TB
+    CF["Cloudflare DNS<br>*.gt3.dev → 10.10.2.10<br>DNS only, not proxied"]
+    LE["Let's Encrypt<br>DNS-01 TXT challenge"]
+
+    AWAY["Client away from home<br>tailnet 100.64.0.0/10"]
+    HOME["Client on the main LAN"]
+
+    UCG["Ubiquiti Cloud Gateway Fiber<br>WAN edge · VLANs · inter-VLAN routing<br>no ports forwarded"]
+
+    HOME -. "resolves" .-> CF
+    AWAY -. "resolves" .-> CF
+    HOME -- "https :443" --> UCG
+    UCG -- "routes into the VLAN" --> TRAEFIK
+
+    subgraph VLAN["VLAN 10.10.2.0/24 — private, RFC1918"]
+        subgraph NAS["NAS · 10.10.2.10"]
+            TSC["tailscale<br>host network<br>advertises 10.10.2.0/24"]
+            TRAEFIK["traefik<br>:80 redirect → :443"]
+            PORT["portainer :9000"]
+            UGOS["UGOS web UI :9999"]
+
+            subgraph STACKS["Portainer stacks"]
+                IMM["immich :2283<br>immich_server · postgres<br>redis · machine-learning"]
+                MED["media-stack<br>jellyfin :8096 · sonarr :8989<br>radarr :7878 · lidarr :8686<br>prowlarr :9696 · jellyseerr :5055<br>decypharr :8282"]
+                SD["sd-import-watcher<br>no published port"]
+            end
+        end
+
+        HP["HP EliteDesk mini<br>planned — joins as a swarm node"]
+    end
+
+    AWAY -- "subnet route" --> TSC
+    TSC --> TRAEFIK
+
+    TRAEFIK --> IMM
+    TRAEFIK --> MED
+    TRAEFIK --> PORT
+    TRAEFIK --> UGOS
+    TRAEFIK -. "planned" .-> HP
+    TRAEFIK -. "Cloudflare API writes TXT" .-> LE
+```
+
 ### Getting to it from outside
 
 Tailscale. The NAS advertises `10.10.2.0/24` as a subnet route (`TS_ROUTES` in
