@@ -205,6 +205,59 @@ docker exec traefik ls /etc/traefik/dynamic    # should list routes.yml
 Labelled services don't touch this path at all — it only matters for the
 handful of routes still in `routes.yml`.
 
+## Migrating tailscale
+
+This stack is still deployed from Portainer's web editor. Its state volume
+holds the node's WireGuard keys — lose it and the NAS rejoins the tailnet as a
+new node with a new IP, and the subnet route needs approving again. Do this
+from the LAN, not over Tailscale.
+
+The compose in this repo uses a named volume (`tailscale-state`) rather than
+the relative bind mount the live stack has, so once migrated the state no
+longer depends on where Portainer puts the checkout.
+
+1. Find the current state. The relative `./tailscale-state` mount resolved to a
+   directory Docker created on the host:
+
+   ```
+   ls -la /data/compose/2/tailscale-state/
+   ```
+
+2. Create the named volume and copy the existing state in, so the node keeps
+   its identity:
+
+   ```
+   docker volume create tailscale_tailscale-state
+   docker run --rm \
+     -v tailscale_tailscale-state:/dst \
+     -v /data/compose/2/tailscale-state:/src:ro \
+     alpine sh -c 'cp -a /src/. /dst/'
+   ```
+
+   The volume name is `<stack name>_<volume name>`, so the stack must stay
+   named `tailscale`.
+
+3. Generate a fresh auth key in the Tailscale admin console and set
+   `TS_AUTHKEY` on the stack. The live stack has a key hardcoded; this repo
+   uses `${TS_AUTHKEY}`, which renders empty if the variable isn't set. It's
+   only needed if step 2 didn't take, but that's exactly when you'll want it.
+
+4. Delete the stack and recreate it as a Repository stack named `tailscale`,
+   compose path `stacks/tailscale/docker-compose.yml`.
+
+5. Check it came back as the same node, not a new one:
+
+   ```
+   docker exec tailscale tailscale status | head -3
+   ```
+
+   Same IP as before means the state copy worked. A new IP means it
+   re-registered — remove the stale node in the admin console and re-approve
+   the subnet route.
+
+Host packet forwarding lives outside the stack, in
+`/etc/sysctl.d/99-tailscale.conf`. It isn't affected by any of this.
+
 ## Secrets
 
 Secrets are **never** committed. Compose files reference `${VAR}`; the values
