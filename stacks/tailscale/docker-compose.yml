@@ -1,6 +1,6 @@
-# Migrating this stack: see "Migrating tailscale" in the README. Its state
-# volume holds the node's WireGuard keys -- lose it and the NAS rejoins the
-# tailnet as a new node with a new IP, and the subnet route needs re-approving.
+# The tailscale-state volume holds this node's WireGuard keys. Lose it and the
+# NAS rejoins the tailnet as a new node with a new IP, and the subnet route
+# needs approving again.
 
 services:
   tailscale:
@@ -28,17 +28,6 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
-
-  # This plain nginx predates Traefik and is superseded by it.
-  # Left running deliberately -- remove it only once Traefik is proven.
-  nginx:
-    image: nginx@sha256:abe47724e466aeab9a345d8e46a221c2fa8953c7848bb4a3bd9976a7199f8cf2
-    container_name: nginx_server
-    ports:
-      - "8080:80"
-    depends_on:
-      - tailscale
-    restart: unless-stopped
 
 volumes:
   tailscale-state:
