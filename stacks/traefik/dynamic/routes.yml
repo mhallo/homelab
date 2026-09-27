@@ -1,5 +1,6 @@
-# Add a service: one entry under routers, one under services. Traefik
-# hot-reloads this file. The *.gt3.dev wildcard already resolves every name.
+# Routes for things Traefik cannot discover from Docker: the UGOS web UI, which
+# isn't a container, and portainer, which runs outside any stack. Everything
+# else is labelled on its own container.
 
 http:
   routers:
@@ -18,46 +19,6 @@ http:
       service: nas
       entryPoints: [websecure]
 
-    immich:
-      rule: "Host(`immich.gt3.dev`)"
-      service: immich
-      entryPoints: [websecure]
-
-    jellyfin:
-      rule: "Host(`jellyfin.gt3.dev`)"
-      service: jellyfin
-      entryPoints: [websecure]
-
-    jellyseerr:
-      rule: "Host(`requests.gt3.dev`)"
-      service: jellyseerr
-      entryPoints: [websecure]
-
-    sonarr:
-      rule: "Host(`sonarr.gt3.dev`)"
-      service: sonarr
-      entryPoints: [websecure]
-
-    radarr:
-      rule: "Host(`radarr.gt3.dev`)"
-      service: radarr
-      entryPoints: [websecure]
-
-    lidarr:
-      rule: "Host(`lidarr.gt3.dev`)"
-      service: lidarr
-      entryPoints: [websecure]
-
-    prowlarr:
-      rule: "Host(`prowlarr.gt3.dev`)"
-      service: prowlarr
-      entryPoints: [websecure]
-
-    decypharr:
-      rule: "Host(`decypharr.gt3.dev`)"
-      service: decypharr
-      entryPoints: [websecure]
-
   services:
     portainer:
       loadBalancer:
@@ -68,43 +29,3 @@ http:
       loadBalancer:
         servers:
           - url: "http://10.10.2.10:9999"
-
-    immich:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:2283"
-
-    jellyfin:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:8096"
-
-    jellyseerr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:5055"
-
-    sonarr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:8989"
-
-    radarr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:7878"
-
-    lidarr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:8686"
-
-    prowlarr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:9696"
-
-    decypharr:
-      loadBalancer:
-        servers:
-          - url: "http://10.10.2.10:8282"

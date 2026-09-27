@@ -8,6 +8,9 @@ services:
     command:
       - "--api.insecure=false"
       - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
       - "--entryPoints.web.address=:80"
@@ -26,8 +29,17 @@ services:
       - "443:443"
     environment:
       - "CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}"
+    networks:
+      - proxy
     volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
       # Portainer's checkout by host path. "11" is the stack id -- recreating
       # the stack changes it and breaks this mount silently.
       - "/volume1/docker/portainer/compose/11/stacks/traefik/dynamic:/etc/traefik/dynamic:ro"
       - "/volume1/Software/Docker-Appdata/traefik/letsencrypt:/letsencrypt"
+
+# This stack creates the proxy network. Every other stack joins it as
+# external, so deploy traefik first or they fail to start.
+networks:
+  proxy:
+    name: proxy
