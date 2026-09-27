@@ -13,7 +13,7 @@ stacks/             One directory per Portainer stack
     dynamic/routes.yml      routes for things that aren't containers
   immich/
   media-stack/
-  tailscale/        see the warning at the top of its compose file
+  tailscale/        subnet router; state in a named volume
 ```
 
 ## Networking model
@@ -92,17 +92,22 @@ Two parts of that don't live in the compose file:
 iOS and macOS pick up subnet routes on their own. Linux clients need
 `--accept-routes`.
 
-### Why the file provider instead of Docker labels
+### Two providers
 
-Traefik routes to services by host IP and published port, not by Docker
-discovery. This means:
+Traefik runs the Docker provider and the file provider together.
 
-- no existing stack needs editing, joining a shared network, or redeploying
-- Traefik does not mount `docker.sock`, so it holds no Docker privileges
-- the whole routing table is one reviewable file in git
+Containers opt in with `traefik.enable=true` and a few labels, on the shared
+`proxy` network. Traefik reaches them over that network on their internal port,
+so a labelled service needs no published host port at all. `exposedbydefault`
+is off, so nothing is routed by accident.
 
-Trade-off: new services are added manually in `routes.yml` rather than being
-auto-discovered. For a stable service list this is the better trade.
+The file provider covers what Docker can't see: the UGOS web UI, which isn't a
+container, and portainer, which runs outside any stack.
+
+This costs Traefik a `docker.sock` mount, which is worth naming plainly —
+anything that compromises Traefik can talk to the daemon, and read access is
+enough to enumerate everything. A socket-proxy sidecar would narrow that to the
+endpoints Traefik actually needs.
 
 ## Adding a service
 
@@ -205,59 +210,6 @@ docker exec traefik ls /etc/traefik/dynamic    # should list routes.yml
 Labelled services don't touch this path at all — it only matters for the
 handful of routes still in `routes.yml`.
 
-## Migrating tailscale
-
-This stack is still deployed from Portainer's web editor. Its state volume
-holds the node's WireGuard keys — lose it and the NAS rejoins the tailnet as a
-new node with a new IP, and the subnet route needs approving again. Do this
-from the LAN, not over Tailscale.
-
-The compose in this repo uses a named volume (`tailscale-state`) rather than
-the relative bind mount the live stack has, so once migrated the state no
-longer depends on where Portainer puts the checkout.
-
-1. Find the current state. The relative `./tailscale-state` mount resolved to a
-   directory Docker created on the host:
-
-   ```
-   ls -la /data/compose/2/tailscale-state/
-   ```
-
-2. Create the named volume and copy the existing state in, so the node keeps
-   its identity:
-
-   ```
-   docker volume create tailscale_tailscale-state
-   docker run --rm \
-     -v tailscale_tailscale-state:/dst \
-     -v /data/compose/2/tailscale-state:/src:ro \
-     alpine sh -c 'cp -a /src/. /dst/'
-   ```
-
-   The volume name is `<stack name>_<volume name>`, so the stack must stay
-   named `tailscale`.
-
-3. Generate a fresh auth key in the Tailscale admin console and set
-   `TS_AUTHKEY` on the stack. The live stack has a key hardcoded; this repo
-   uses `${TS_AUTHKEY}`, which renders empty if the variable isn't set. It's
-   only needed if step 2 didn't take, but that's exactly when you'll want it.
-
-4. Delete the stack and recreate it as a Repository stack named `tailscale`,
-   compose path `stacks/tailscale/docker-compose.yml`.
-
-5. Check it came back as the same node, not a new one:
-
-   ```
-   docker exec tailscale tailscale status | head -3
-   ```
-
-   Same IP as before means the state copy worked. A new IP means it
-   re-registered — remove the stale node in the admin console and re-approve
-   the subnet route.
-
-Host packet forwarding lives outside the stack, in
-`/etc/sysctl.d/99-tailscale.conf`. It isn't affected by any of this.
-
 ## Secrets
 
 Secrets are **never** committed. Compose files reference `${VAR}`; the values
@@ -287,14 +239,18 @@ Static config (entrypoints, providers, ACME, the wildcard certificate) is set
 as `command:` flags. Do not add a `traefik.yml` back -- Traefik's static config
 sources are mutually exclusive, so the file would silently disable every flag.
 
-Dynamic config is `dynamic/routes.yml` only. Traefik watches it and reloads on
-change.
+Dynamic config comes from two places: Docker labels on the containers
+themselves, and `dynamic/routes.yml` for the handful of things that aren't
+containers. Traefik watches both and reloads on change.
 
 ## Conventions
 
-- **Bind mounts for state must be absolute paths.** A relative path resolves
-  inside the stack's project directory (`/data/compose/<stack-id>/`), which
-  changes if the stack is ever recreated -- silently losing the data. The
-  `tailscale` stack currently violates this; see its compose file.
-- Config that should come from git may use relative paths, since it is
-  reproducible from the repo.
+- **State goes in a named volume**, not a bind mount. A relative bind mount
+  resolves against whatever working directory the deploying tool picked, and
+  Portainer's isn't the one you expect — Docker then creates an empty directory
+  instead of failing, and the service starts with nothing. A named volume
+  resolves by name and survives recreation as long as the stack keeps its name.
+- **An absolute path is the alternative** where the data has to live somewhere
+  specific, like `/volume1` media or immich's database.
+- **Keep stack names stable.** Compose derives volume names from the project
+  name, so renaming a stack orphans its volumes.
