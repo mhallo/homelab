@@ -8,8 +8,9 @@ deploys from this repo.
 ```
 stacks/             One directory per Portainer stack
   traefik/          Reverse proxy for *.gt3.dev
-    docker-compose.yml      static config, as command flags
-    dynamic/routes.yml      >>> EDIT THIS to add a service <<<
+    docker-compose.yml      static config as command flags; creates the
+                            proxy network and owns the docker provider
+    dynamic/routes.yml      routes for things that aren't containers
   immich/
   media-stack/
   tailscale/        see the warning at the top of its compose file
@@ -107,36 +108,69 @@ auto-discovered. For a stable service list this is the better trade.
 
 ## Adding a service
 
-1. Deploy the container, publishing a port on the host.
+Most things are discovered from Docker labels. Traefik only watches containers
+that opt in with `traefik.enable=true`, and only on the `proxy` network.
 
-2. Add a router and a service to `stacks/traefik/dynamic/routes.yml`:
+In the service's compose:
 
-   ```yaml
-   http:
-     routers:
-       newthing:
-         rule: "Host(`newthing.gt3.dev`)"
-         service: newthing
-         entryPoints: [websecure]
+```yaml
+  newthing:
+    networks: [proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.newthing.rule=Host(`newthing.gt3.dev`)"
+      - "traefik.http.routers.newthing.entrypoints=websecure"
+      - "traefik.http.services.newthing.loadbalancer.server.port=8080"
+```
 
-     services:
-       newthing:
-         loadBalancer:
-           servers:
-             - url: "http://10.10.2.10:PORT"
-   ```
+and at the bottom of the file:
 
-3. Push and merge to `main`.
+```yaml
+networks:
+  proxy:
+    external: true
+```
 
-4. In Portainer, open the `traefik` stack, hit Pull and redeploy, and tick
-   "Re-pull image and redeploy".
+`server.port` is the port inside the container, not a published host port.
+Traefik reaches it over the `proxy` network, so the service doesn't need a
+`ports:` block at all unless you also want it reachable by IP.
 
-5. Check it: `curl -sI https://newthing.gt3.dev | head -1`
+Push, merge, then redeploy that stack. Traefik picks up the labels as the
+container starts — no traefik redeploy needed.
 
-   2xx or 3xx means it routed. 404 means no router matched the hostname, so
-   check the rule for a typo.
+Check it with `curl -sI https://newthing.gt3.dev | head -1`. A 404 means no
+router matched, so the container either isn't on `proxy` or is missing
+`traefik.enable=true`. The dashboard at `traefik.gt3.dev` lists what Traefik
+currently sees.
 
-No DNS or cert work. The `*.gt3.dev` wildcard covers every hostname already.
+### Things that aren't containers
+
+The UGOS web UI and portainer can't be discovered, so they live in
+`stacks/traefik/dynamic/routes.yml` as explicit routes:
+
+```yaml
+http:
+  routers:
+    newthing:
+      rule: "Host(`newthing.gt3.dev`)"
+      service: newthing
+      entryPoints: [websecure]
+
+  services:
+    newthing:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.2.10:PORT"
+```
+
+That file is mounted into traefik, so changing it means redeploying the traefik
+stack with "Re-pull image and redeploy" ticked.
+
+Don't define the same hostname in both places. Two routers with the same rule
+is ambiguous and which one wins isn't obvious.
+
+No DNS or cert work either way. The `*.gt3.dev` wildcard covers every hostname
+already.
 
 ### Force the recreate
 
@@ -170,8 +204,8 @@ start here:
 docker exec traefik ls /etc/traefik/dynamic    # should list routes.yml
 ```
 
-Docker labels would drop this dependency, at the cost of putting every stack on
-a shared network and giving Traefik the docker socket.
+Labelled services don't touch this path at all — it only matters for the
+handful of routes still in `routes.yml`.
 
 ## Secrets
 
