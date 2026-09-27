@@ -34,7 +34,7 @@
 
 services:
   tailscale:
-    image: tailscale/tailscale:latest
+    image: tailscale/tailscale@sha256:c507f3a2a6ab1cabd8d809b98edeb41edbd5c3fb6ad9632ffd098b4c7d0b4065
     container_name: tailscale
     hostname: tailscale-nginx
     environment:
@@ -55,7 +55,7 @@ services:
   # This plain nginx predates Traefik and is superseded by it.
   # Left running deliberately -- remove it only once Traefik is proven.
   nginx:
-    image: nginx:latest
+    image: nginx@sha256:abe47724e466aeab9a345d8e46a221c2fa8953c7848bb4a3bd9976a7199f8cf2
     container_name: nginx_server
     ports:
       - "8080:80"

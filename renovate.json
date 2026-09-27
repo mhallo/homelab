@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    "schedule:weekly"
+  ],
+  "timezone": "America/Los_Angeles",
+  "packageRules": [
+    {
+      "description": "The *arr apps release constantly. One PR for the lot.",
+      "matchPackageNames": ["lscr.io/linuxserver/**"],
+      "groupName": "linuxserver"
+    },
+    {
+      "description": "Immich migrations are one-way and it warns against skipping versions. Keep it on its own PR and let a release settle first.",
+      "matchPackageNames": ["ghcr.io/immich-app/**"],
+      "minimumReleaseAge": "7 days",
+      "labels": ["immich", "read-release-notes"]
+    }
+  ]
+}

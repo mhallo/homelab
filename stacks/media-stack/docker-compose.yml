@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin:latest
+    image: lscr.io/linuxserver/jellyfin:12.1ubu2604-ls50@sha256:51252e7a416e703cdc3cd91e8a54673a2430cc80409be8a38abe511411577b95
     container_name: jellyfin
     environment:
       - PUID=0
@@ -25,7 +25,7 @@ services:
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
 
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:2.6.5.5623-ls162@sha256:f2b26429893d4c4cb71941b7ee50b1bdecd9d5f9f9e02d5410615e9f4f7c8d95
     container_name: prowlarr
     environment:
       - PUID=0
@@ -44,7 +44,7 @@ services:
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
 
   sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:4.0.20.3014-ls326@sha256:f247545d23ba8b233d6604575347e48a623fe6ad75dda02348bf81917f3b5c06
     container_name: sonarr
     environment:
       - PUID=0
@@ -64,7 +64,7 @@ services:
       - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
 
   radarr:
-    image: lscr.io/linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:6.4.4.10685-ls318@sha256:adb6c09d6b729ea5e642c99cea35af72702ef476bf4763f153299ac5db9f0b4f
     container_name: radarr
     environment:
       - PUID=0
@@ -84,7 +84,7 @@ services:
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
 
   lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
+    image: lscr.io/linuxserver/lidarr:3.1.0.4875-ls42@sha256:044d616beb43c5e7810991242c6a9c42b93ff238c8c0850684939634ea751208
     container_name: lidarr
     environment:
       - PUID=0
@@ -104,7 +104,7 @@ services:
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   jellyseerr:
-    image: fallenbagel/jellyseerr:latest
+    image: fallenbagel/jellyseerr@sha256:4538137bc5af902dece165f2bf73776d9cf4eafb6dd714670724af8f3eb77764
     container_name: jellyseerr
     environment:
       - TZ=America/Los_Angeles
@@ -121,7 +121,7 @@ services:
       - "traefik.http.services.jellyseerr.loadbalancer.server.port=5055"
 
   decypharr:
-    image: cy01/blackhole:latest
+    image: cy01/blackhole@sha256:a65c62a18843ca3dfa73cdee5eecccd3732d98f3ff845ae8338a1caf7060dd1a
     container_name: decypharr
     environment:
       - PUID=0
