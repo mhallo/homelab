@@ -1,0 +1,110 @@
+# Sure (personal finance), from upstream's compose.example.yml:
+# https://github.com/we-promise/sure/blob/main/docs/hosting/docker.md
+#
+# Differences from upstream:
+# - No insecure fallbacks for SECRET_KEY_BASE / POSTGRES_PASSWORD; they're
+#   Portainer env vars (see .env.example).
+# - The backup profile is dropped. It bind mounts ./bin/db-backup.sh, which
+#   resolves against Portainer's checkout and would come up empty.
+# - AI / OpenAI variables are left out until they're wanted.
+
+x-db-env: &db_env
+  POSTGRES_USER: sure_user
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_DB: sure_production
+
+x-rails-env: &rails_env
+  <<: *db_env
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+  SELF_HOSTED: "true"
+  # Traefik terminates TLS and forwards plain HTTP.
+  RAILS_FORCE_SSL: "false"
+  RAILS_ASSUME_SSL: "true"
+  # Changing either of these after registering a passkey invalidates it.
+  WEBAUTHN_RP_ID: gt3.dev
+  WEBAUTHN_ALLOWED_ORIGINS: https://sure.gt3.dev
+  DB_HOST: db
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/1
+  TZ: America/Los_Angeles
+
+services:
+  web:
+    image: ghcr.io/we-promise/sure:0.7.4@sha256:391b2c52acfe538065a41cdd1c9755f90d95ba17a2c06e9b6438b12098df3f3a
+    container_name: sure_web
+    volumes:
+      - app-storage:/rails/storage
+    environment:
+      <<: *rails_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Upstream's workaround for IPv6-first resolution hanging market data
+    # syncs (Yahoo Finance). Compose service names still resolve internally.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sure.rule=Host(`sure.gt3.dev`)"
+      - "traefik.http.routers.sure.entrypoints=websecure"
+      - "traefik.http.services.sure.loadbalancer.server.port=3000"
+
+  worker:
+    image: ghcr.io/we-promise/sure:0.7.4@sha256:391b2c52acfe538065a41cdd1c9755f90d95ba17a2c06e9b6438b12098df3f3a
+    container_name: sure_worker
+    command: bundle exec sidekiq
+    volumes:
+      - app-storage:/rails/storage
+    environment:
+      <<: *rails_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
+
+  db:
+    image: postgres:16@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54
+    container_name: sure_postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      <<: *db_env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:8@sha256:718f745deb7dfefeac6eed7041fc7ec9476b50e61b247932682457c41adafa0e
+    container_name: sure_redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  app-storage:
+  postgres-data:
+  redis-data:

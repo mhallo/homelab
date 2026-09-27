@@ -13,6 +13,7 @@ stacks/             One directory per Portainer stack
     dynamic/routes.yml      routes for things that aren't containers
   immich/
   media-stack/
+  sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
 ```
 
@@ -60,6 +61,7 @@ flowchart TB
             subgraph STACKS["proxy network — found via Docker labels"]
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
                 MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr<br>jellyseerr · decypharr"]
+                SURE["sure<br>web · worker<br>postgres · redis"]
             end
         end
 
@@ -71,6 +73,7 @@ flowchart TB
 
     TRAEFIK --> IMM
     TRAEFIK --> MED
+    TRAEFIK --> SURE
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
     TRAEFIK -. "planned" .-> HP
