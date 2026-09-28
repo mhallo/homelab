@@ -18,18 +18,26 @@ volumes.
 ## First deploy
 
 1. Deploy traefik first. This stack joins its `proxy` network.
-2. Generate a secret key:
+2. Generate the secrets:
 
    ```
-   openssl rand -hex 64
+   openssl rand -hex 64    # SECRET_KEY_BASE
+   openssl rand -hex 32    # run three times, one per encryption variable
    ```
 
 3. In Portainer: **Stacks → Add stack → Repository**.
    - Name: `sure`. Don't rename it later: the volume names derive from it.
    - Compose path: `stacks/sure/docker-compose.yml`
    - Environment variables:
-     - `SECRET_KEY_BASE`: the key from step 2
+     - `SECRET_KEY_BASE`
+     - `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`
+     - `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY`
+     - `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT`
      - `POSTGRES_PASSWORD`: anything strong
+
+   Keep a copy of the three encryption values somewhere off the NAS, like a
+   password manager. Without them, bank tokens and MFA secrets in the database
+   can't be decrypted, and a database backup can't be restored usefully.
 
 4. Deploy, then check it's routed:
 
@@ -44,7 +52,9 @@ volumes.
 
 `POSTGRES_PASSWORD` is only read when `postgres-data` is first created.
 Changing it in Portainer afterwards doesn't change the database's password;
-the app would just fail to connect.
+the app fails with `password authentication failed for user "sure_user"`.
+Before there's data, fix that by stopping the stack, running
+`docker volume rm sure_postgres-data`, and starting it again.
 
 ## Passkeys
 
@@ -107,5 +117,9 @@ docker exec sure_postgres pg_dump -U sure_user -d sure_production | gzip > sure-
   `sure_postgres-data` volume, and deploy again.
 - **Market data syncs hang**: the IPv6-first DNS problem upstream works around.
   `web` and `worker` already use `8.8.8.8` / `1.1.1.1` for this.
+- **`[SECURITY] ActiveRecord Encryption is NOT configured`**: the three
+  `ACTIVE_RECORD_ENCRYPTION_*` variables aren't set on the stack.
+- **`[SKYLIGHT] Unable to start`**, **`No SSO providers enabled`**: harmless.
+  Skylight is upstream's APM and SSO is optional.
 - **Stuck syncs or imports**: **Settings → Background jobs**. The Sidekiq
   dashboard at `/sidekiq` (super admin only) is the fallback.
