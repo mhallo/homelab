@@ -6,11 +6,14 @@
 # https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
 #
 # The compose file on main may not be compatible with the latest release.
+#
+# Local changes: the version is pinned inline as tag@digest instead of
+# ${IMMICH_VERSION}, because Renovate can't see a tag inside a variable default.
 name: immich
 services:
   immich-server:
     container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-v3.2.2}
+    image: ghcr.io/immich-app/immich-server:v3.2.2@sha256:79cc1623323d5894922686d8743b4780181428f98eecbfb58ce12c41ef02d1ea
     # extends:
     #   file: hwaccel.transcoding.yml
     #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
@@ -42,8 +45,8 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.
-    # Example tag: ${IMMICH_VERSION:-v3.2.2}-cuda
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-v3.2.2}
+    # Example tag: v3.2.2-cuda
+    image: ghcr.io/immich-app/immich-machine-learning:v3.2.2@sha256:60dfcf266a9ef3b7376f5678e8c980d4fb61db5fc48c078fe8a326ab1535d60d
     # extends: # uncomment this section for hardware acceleration - see https://docs.immich.app/features/ml-hardware-acceleration
     #   file: hwaccel.ml.yml
     #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
