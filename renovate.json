@@ -7,28 +7,44 @@
   "timezone": "America/Los_Angeles",
   "packageRules": [
     {
-      "description": "The *arr apps release constantly. One PR for the lot.",
-      "matchPackageNames": ["lscr.io/linuxserver/**"],
-      "groupName": "linuxserver"
+      "description": "One PR per stack, so a merge is one Portainer redeploy. Majors still get their own PR.",
+      "matchFileNames": ["stacks/immich/**"],
+      "groupName": "immich"
     },
     {
-      "description": "Immich migrations are one-way and it warns against skipping versions. Keep it on its own PR and let a release settle first.",
+      "matchFileNames": ["stacks/media-stack/**"],
+      "groupName": "media-stack"
+    },
+    {
+      "matchFileNames": ["stacks/sure/**"],
+      "groupName": "sure"
+    },
+    {
+      "matchFileNames": ["stacks/tailscale/**"],
+      "groupName": "tailscale"
+    },
+    {
+      "matchFileNames": ["stacks/traefik/**"],
+      "groupName": "traefik"
+    },
+    {
+      "description": "Databases and caches follow the app, not their own releases. Digest refreshes keep the tag's own patches coming; a tag change is done by hand when the app's release notes call for it. A Postgres major also can't read the previous major's data directory, so that's a dump and restore, not a tag bump.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres", "**/postgres", "redis", "**/redis", "**/valkey"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "enabled": false
+    },
+    {
+      "description": "Immich migrations are one-way and it warns against skipping versions. Let a release settle first.",
       "matchPackageNames": ["ghcr.io/immich-app/**"],
       "minimumReleaseAge": "7 days",
       "labels": ["immich", "read-release-notes"]
     },
     {
-      "description": "Sure runs one-way Rails migrations and releases often. Its own PR, after a release has settled.",
+      "description": "Sure runs one-way Rails migrations and releases often. Let a release settle first.",
       "matchPackageNames": ["ghcr.io/we-promise/**"],
       "minimumReleaseAge": "7 days",
       "labels": ["sure", "read-release-notes"]
-    },
-    {
-      "description": "A Postgres major can't read the previous major's data directory. That upgrade is a dump and restore, not a tag bump.",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["postgres"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
     }
   ]
 }

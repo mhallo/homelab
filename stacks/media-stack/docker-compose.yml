@@ -104,7 +104,7 @@ services:
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
   jellyseerr:
-    image: fallenbagel/jellyseerr@sha256:4538137bc5af902dece165f2bf73776d9cf4eafb6dd714670724af8f3eb77764
+    image: fallenbagel/jellyseerr:2.7.3@sha256:4538137bc5af902dece165f2bf73776d9cf4eafb6dd714670724af8f3eb77764
     container_name: jellyseerr
     environment:
       - TZ=America/Los_Angeles
@@ -121,7 +121,7 @@ services:
       - "traefik.http.services.jellyseerr.loadbalancer.server.port=5055"
 
   decypharr:
-    image: cy01/blackhole@sha256:a65c62a18843ca3dfa73cdee5eecccd3732d98f3ff845ae8338a1caf7060dd1a
+    image: cy01/blackhole:v2.5@sha256:a65c62a18843ca3dfa73cdee5eecccd3732d98f3ff845ae8338a1caf7060dd1a
     container_name: decypharr
     environment:
       - PUID=0

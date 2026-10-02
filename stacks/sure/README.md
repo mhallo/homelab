@@ -119,6 +119,12 @@ docker exec sure_postgres pg_dump -U sure_user -d sure_production | gzip > sure-
   `web` and `worker` already use `8.8.8.8` / `1.1.1.1` for this.
 - **`[SECURITY] ActiveRecord Encryption is NOT configured`**: the three
   `ACTIVE_RECORD_ENCRYPTION_*` variables aren't set on the stack.
+- **"We're sorry, but something went wrong" with
+  `ActiveRecord::Encryption::Errors::Decryption` in the web log**: the database
+  holds rows written with different encryption keys, or with none. Restore the
+  original three values if you have them. If the data is disposable, stop the
+  stack, run `docker volume rm sure_postgres-data sure_app-storage`, start it,
+  and register again.
 - **`[SKYLIGHT] Unable to start`**, **`No SSO providers enabled`**: harmless.
   Skylight is upstream's APM and SSO is optional.
 - **Stuck syncs or imports**: **Settings → Background jobs**. The Sidekiq
