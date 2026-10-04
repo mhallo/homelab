@@ -17,42 +17,52 @@ which compose names `dozzle_data`.
 
 ## First deploy
 
-Dozzle runs with simple auth and won't start without `users.yml`, so seed
-the volume first. On the NAS:
-
-1. Generate the user file. Leaving out `--password` makes Dozzle prompt for
-   it, so the password stays out of shell history:
-
-   ```
-   docker run -it --rm amir20/dozzle:v11.2.0 generate admin --name "Matt" --email you@example.com > users.yml
-   ```
-
-2. Copy it into the volume, then delete the local copy:
-
-   ```
-   docker run --rm -i -v dozzle_data:/data alpine sh -c 'cat > /data/users.yml' < users.yml
-   rm users.yml
-   ```
-
-3. Deploy traefik first. This stack joins its `proxy` network.
-4. In Portainer: **Stacks → Add stack → Repository**.
+1. Deploy traefik first. This stack joins its `proxy` network.
+2. In Portainer: **Stacks → Add stack → Repository**.
    - Name: `dozzle`. Don't rename it later: the volume name derives from it,
-     and step 2 writes to `dozzle_data` by name.
+     and step 3 writes to `dozzle_data` by name.
    - Compose path: `stacks/dozzle/docker-compose.yml`
    - Environment variables: none.
-5. Deploy, then check it's routed:
+
+   Deploy. `dozzle_web` restart-loops with `No users.yaml or users.yml file
+   found` until step 3 is done; that's expected.
+3. Seed `users.yml` into the volume. On the NAS, with your own username,
+   email and password:
+
+   ```
+    docker run -i --rm amir20/dozzle:v11.2.0 generate you@example.com --email you@example.com --name "Matt" --password 'YOUR-PASSWORD' 2>/dev/null | docker run -i --rm -v dozzle_data:/data alpine sh -c 'cat > /data/users.yml'
+   history -c
+   ```
+
+   - The username is the first argument after `generate` and is matched
+     exactly, case included. Use what your password manager stores as the
+     username so autofill works.
+   - `--password` keeps the input exact. The prompt and piped alternatives
+     corrupted the password or the file in practice (`-t` adds `\r` and the
+     prompt to the output; pasting into a hidden prompt over SSH can mangle it).
+   - The leading space keeps the command out of history where `HISTCONTROL`
+     has `ignorespace`; `history -c` covers it otherwise.
+   - A password containing `'` breaks the quoting; generate one without it.
+4. Log in at `https://dozzle.gt3.dev`. No restart needed: Dozzle re-reads
+   `users.yml` on each login attempt. If it fails, check what was written:
+
+   ```
+   docker run --rm -v dozzle_data:/data alpine cat -v /data/users.yml
+   ```
+
+   It should be plain lines starting with `users:`, with no `^M` or `^[`, and
+   a 60-character `$2a$` hash.
+5. Check it's routed:
 
    ```
    curl -sI https://dozzle.gt3.dev | head -1
    ```
 
-Compose warns that `dozzle_data` "already exists but was not created by Docker
-Compose" because step 2 created it. That's harmless; it uses the volume as is.
-
 ## Users
 
-To add a user or change a password, generate a new entry as in step 1 and
-edit `/data/users.yml` in the volume, then restart `dozzle_web`. The file
+To change the password, re-run step 3; it overwrites `users.yml`. To add a
+user, generate an entry the same way but send it to the terminal, and paste it
+under `users:` in `/data/users.yml`. No restart needed either way. The file
 format and per-user roles/filters are in upstream's
 [simple auth docs](https://dozzle.dev/guide/authentication/simple).
 
@@ -72,7 +82,7 @@ point of having it.
 
 Renovate opens one PR for this stack covering both images. After merging,
 redeploy in Portainer with **Re-pull image and redeploy**. Bump the
-`amir20/dozzle` tag in the step 1 command to match.
+`amir20/dozzle` tag in the step 3 command to match.
 
 ## Backups
 
@@ -81,9 +91,15 @@ Nothing worth backing up beyond `users.yml`, which is easy to regenerate.
 ## Troubleshooting
 
 - **404 from Traefik**: `dozzle` isn't on `proxy`, or the labels are missing.
-- **`dozzle_web` restarting, log mentions `users.yml`**: the volume wasn't
-  seeded, or was seeded under a different name. Check with
-  `docker run --rm -v dozzle_data:/data alpine ls /data`.
+- **`dozzle_web` restarting with `No users.yaml or users.yml file found`**:
+  the volume wasn't seeded, or was seeded under a different name. Compare
+  `docker volume ls | grep dozzle` with the name used in step 3, then check
+  with `docker run --rm -v dozzle_data:/data alpine ls -la /data`.
+- **`invalid credentials` in the log**: the username doesn't match exactly
+  (autofill putting in an email, a phone capitalising the first letter), or
+  the password differs from what was hashed. Re-run step 3 with `--password`.
+- **`yaml: control characters are not allowed`**: `users.yml` has `\r` or
+  terminal escape codes in it, usually from `docker run -t`. Re-run step 3.
 - **Dozzle shows no containers, or `403` in the `dozzle_socket-proxy`
   log**: Dozzle hit an endpoint the proxy blocks. Note which API path in the
   proxy log and enable only that section.
