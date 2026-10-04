@@ -11,6 +11,7 @@ stacks/             One directory per Portainer stack
     docker-compose.yml      static config as command flags; creates the
                             proxy network and owns the docker provider
     dynamic/routes.yml      routes for things that aren't containers
+  dozzle/           live container log viewer; read-only socket proxy
   immich/
   media-stack/
   sure/             personal finance; state in named volumes
@@ -62,6 +63,7 @@ flowchart TB
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
                 MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr<br>jellyseerr · decypharr"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
+                DOZ["dozzle<br>web · socket-proxy"]
             end
         end
 
@@ -74,6 +76,7 @@ flowchart TB
     TRAEFIK --> IMM
     TRAEFIK --> MED
     TRAEFIK --> SURE
+    TRAEFIK --> DOZ
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
     TRAEFIK -. "planned" .-> HP

@@ -8,6 +8,10 @@
   "packageRules": [
     {
       "description": "One PR per stack, so a merge is one Portainer redeploy. Majors still get their own PR.",
+      "matchFileNames": ["stacks/dozzle/**"],
+      "groupName": "dozzle"
+    },
+    {
       "matchFileNames": ["stacks/immich/**"],
       "groupName": "immich"
     },
