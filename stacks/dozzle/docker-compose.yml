@@ -1,0 +1,73 @@
+# Dozzle (live container log viewer), from upstream's Docker Compose example:
+# https://dozzle.dev/guide/getting-started
+#
+# Differences from upstream:
+# - No docker.sock mount on dozzle. The socket-proxy service is upstream's
+#   minimal socket proxy (https://dozzle.dev/guide/remote-hosts), so Dozzle
+#   only gets the read endpoints it needs, with POST off. A ":ro" socket
+#   mount wouldn't do that: the API behind it stays fully writable. Upstream
+#   runs the proxy --privileged; that's only for SELinux/AppArmor and is
+#   left off here.
+# - Dozzle reaches the proxy through DOCKER_HOST rather than
+#   DOZZLE_REMOTE_HOST, so it's still treated as the local host and the
+#   healthcheck covers it.
+# - Routed through Traefik instead of publishing 8080.
+# - DOZZLE_AUTH_PROVIDER=simple and DOZZLE_HOSTNAME uncommented. users.yml is
+#   seeded into the data volume before the first deploy; see README.md.
+# - Actions and shell options dropped: they need POST on the proxy.
+# - Volume named data rather than dozzle_data, so compose names it
+#   dozzle_data rather than dozzle_dozzle_data.
+# - Healthcheck from upstream's healthcheck guide, at 30s instead of 3s.
+
+services:
+  dozzle:
+    image: amir20/dozzle:v11.2.0@sha256:db7e19fd36189823c66239894e821561cb201248af35362ec6d39a08e23ff88b
+    container_name: dozzle_web
+    volumes:
+      - data:/data
+    environment:
+      - DOCKER_HOST=tcp://socket-proxy:2375
+      - DOZZLE_AUTH_PROVIDER=simple
+      - DOZZLE_HOSTNAME=nas
+      - DOZZLE_NO_ANALYTICS=true
+      #
+      # Connect to one or more remote agents to monitor other Docker hosts. See https://dozzle.dev/guide/agent
+      # - DOZZLE_REMOTE_AGENT=192.168.1.10:7007,192.168.1.11:7007
+      #
+      # Only show containers matching a filter. See https://dozzle.dev/guide/filters
+      # - DOZZLE_FILTER=label=com.example.app
+    depends_on:
+      - socket-proxy
+    healthcheck:
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dozzle.rule=Host(`dozzle.gt3.dev`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: dozzle_socket-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+      - INFO=1
+      # EVENTS, PING and VERSION are on by default; POST is off by default.
+    restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data:
