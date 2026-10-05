@@ -129,3 +129,21 @@ docker exec sure_postgres pg_dump -U sure_user -d sure_production | gzip > sure-
   Skylight is upstream's APM and SSO is optional.
 - **Stuck syncs or imports**: **Settings → Background jobs**. The Sidekiq
   dashboard at `/sidekiq` (super admin only) is the fallback.
+- **Plaid credit cards (or loans) show balances but no transactions**: Sure
+  links them with `liabilities` as the primary product and `transactions`
+  only consented. Plaid doesn't start transactions until something calls it,
+  and Sure only calls it once it's billed, so it never starts. Confirm with:
+
+  ```
+  docker exec sure_web bin/rails runner 'PlaidItem.find_each { |i| p [i.name, i.billed_products] }'
+  ```
+
+  For each item missing `transactions`, make the first call by hand, then
+  **Settings → Bank sync → Sync** (replace the names with yours):
+
+  ```
+  docker exec sure_web bin/rails runner 'PlaidItem.where(name: ["Chase", "American Express"]).each { |i| i.plaid_provider.get_transactions(i.access_token) }'
+  ```
+
+  History starts at about 90 days, not the 2 years a normal link gets. Repeat
+  this after linking any new card.
