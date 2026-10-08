@@ -80,7 +80,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54
+    image: postgres:16@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d
     container_name: sure_postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -97,7 +97,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8@sha256:718f745deb7dfefeac6eed7041fc7ec9476b50e61b247932682457c41adafa0e
+    image: redis:8@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6
     container_name: sure_redis
     volumes:
       - redis-data:/data
