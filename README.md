@@ -14,6 +14,7 @@ stacks/             One directory per Portainer stack
   dozzle/           live container log viewer; read-only socket proxy
   immich/
   media-stack/
+  prep-tracker/     interview prep tracker; image from private GHCR
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
 ```
@@ -63,6 +64,7 @@ flowchart TB
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
                 MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr<br>jellyseerr · decypharr"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
+                PREP["prep-tracker<br>single container"]
                 DOZ["dozzle<br>web · socket-proxy"]
             end
         end
@@ -76,6 +78,7 @@ flowchart TB
     TRAEFIK --> IMM
     TRAEFIK --> MED
     TRAEFIK --> SURE
+    TRAEFIK --> PREP
     TRAEFIK --> DOZ
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
