@@ -51,7 +51,7 @@
       "labels": ["sure", "read-release-notes"]
     },
     {
-      "description": "TODO(human): decide how digest bumps for my own prep-tracker image should land.",
+      "description": "TODO: decide how digest bumps for prep-tracker image should land.",
       "matchPackageNames": ["ghcr.io/mhallo/prep-tracker"]
     },
     {
