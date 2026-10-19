@@ -51,10 +51,6 @@
       "labels": ["sure", "read-release-notes"]
     },
     {
-      "description": "TODO: decide how digest bumps for prep-tracker image should land.",
-      "matchPackageNames": ["ghcr.io/mhallo/prep-tracker"]
-    },
-    {
       "description": "A Postgres major can't read the previous major's data directory. That upgrade is a dump and restore, not a tag bump.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["postgres"],
