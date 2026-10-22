@@ -61,7 +61,7 @@ flowchart TB
 
             subgraph STACKS["proxy network — found via Docker labels"]
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
-                MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr<br>jellyseerr · decypharr"]
+                MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr · flaresolverr<br>jellyseerr · decypharr"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
                 DOZ["dozzle<br>web · socket-proxy"]
             end
