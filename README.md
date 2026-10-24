@@ -16,7 +16,6 @@ stacks/             One directory per Portainer stack
   media-stack/
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
-  tidarr/           Tidal downloader; Lidarr indexer and download client
 ```
 
 ## Networking model
@@ -64,7 +63,6 @@ flowchart TB
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
                 MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr · flaresolverr<br>jellyseerr · decypharr"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
-                TID["tidarr"]
                 DOZ["dozzle<br>web · socket-proxy"]
             end
         end
@@ -78,7 +76,6 @@ flowchart TB
     TRAEFIK --> IMM
     TRAEFIK --> MED
     TRAEFIK --> SURE
-    TRAEFIK --> TID
     TRAEFIK --> DOZ
     TRAEFIK --> PORT
     TRAEFIK --> UGOS

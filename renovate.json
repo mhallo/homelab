@@ -28,10 +28,6 @@
       "groupName": "tailscale"
     },
     {
-      "matchFileNames": ["stacks/tidarr/**"],
-      "groupName": "tidarr"
-    },
-    {
       "matchFileNames": ["stacks/traefik/**"],
       "groupName": "traefik"
     },
