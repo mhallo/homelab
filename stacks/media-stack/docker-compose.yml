@@ -118,6 +118,41 @@ services:
       - "traefik.http.routers.lidarr.entrypoints=websecure"
       - "traefik.http.services.lidarr.loadbalancer.server.port=8686"
 
+  # Music discovery, downloads and Subsonic server. Upstream:
+  # https://github.com/lklynet/aurral/blob/main/docker-compose.yml
+  # https://docs.aurral.org/getting-started/storage/
+  # Changes from upstream:
+  # - Pinned digest instead of :latest.
+  # - ./config is the appdata path, like the rest of this stack.
+  # - ./data is replaced by /volume1/Media at /mnt/storage, the same path
+  #   Lidarr and Jellyfin use, so Aurral can read the files Lidarr reports and
+  #   Jellyfin can read Aurral's Library folder and playlists at the same paths.
+  # - Tidarr's finished downloads are mounted at /downloads, where Tidarr
+  #   reports them (see stacks/tidarr/README.md).
+  # - Routed through Traefik instead of publishing 3001.
+  aurral:
+    image: ghcr.io/lklynet/aurral:2.13.0@sha256:75dd06805e3daefd49eb4f91d19f4110f0ef6eb1d2b13e48ae36120d113b48f0
+    container_name: aurral
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=America/Los_Angeles
+      - DOWNLOAD_FOLDER=/mnt/storage/aurral
+      - FILE_BROWSE_ROOTS=/mnt/storage,/downloads,/config
+      - TRUST_PROXY=1
+      - AURRAL_PUBLIC_URL=https://aurral.gt3.dev
+    volumes:
+      - /volume1/Software/Docker-Appdata/aurral:/config
+      - /volume1/Media:/mnt/storage
+      - /volume1/Media/tidarr-downloads:/downloads
+    restart: unless-stopped
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aurral.rule=Host(`aurral.gt3.dev`)"
+      - "traefik.http.routers.aurral.entrypoints=websecure"
+      - "traefik.http.services.aurral.loadbalancer.server.port=3001"
+
   jellyseerr:
     image: fallenbagel/jellyseerr:2.7.3@sha256:4538137bc5af902dece165f2bf73776d9cf4eafb6dd714670724af8f3eb77764
     container_name: jellyseerr
