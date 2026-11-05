@@ -11,8 +11,8 @@ Only Aurral is documented here so far.
 
 [Aurral](https://github.com/lklynet/aurral) at `https://aurral.gt3.dev`:
 music discovery, scheduled "flow" playlists, playlist imports from Spotify and
-others, and a Subsonic server. It downloads with its built-in yt-dlp (YouTube,
-lossy) and with Tidarr (Tidal, lossless), and can hand albums to Lidarr.
+others, and a Subsonic server. It fetches music through its built-in yt-dlp
+and Tidarr, and can hand albums to Lidarr.
 Upstream docs: <https://docs.aurral.org/>.
 
 | Path in container | Host path                                 | What it is                    |

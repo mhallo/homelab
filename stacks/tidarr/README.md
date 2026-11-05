@@ -1,19 +1,15 @@
 # tidarr
 
-[Tidarr](https://github.com/cstaelen/tidarr), a Tidal downloader (FLAC, up to
-24-bit/192 kHz), at `https://tidarr.gt3.dev`. It plugs into Lidarr as both a
-Newznab indexer and a SABnzbd download client, so Lidarr searches Tidal, grabs
-albums from it and imports them like any other source. Aurral (in
+[Tidarr](https://github.com/cstaelen/tidarr) at `https://tidarr.gt3.dev`. It
+plugs into Lidarr as both a Newznab indexer and a SABnzbd download client, so
+Lidarr treats it like any other source. Aurral (in
 `media-stack`) uses it the same way, through Prowlarr; Aurral needs Tidarr
 1.2.9 or later. Based on upstream's
 [README](https://github.com/cstaelen/tidarr#getting-started) and
 [Lidarr integration guide](https://github.com/cstaelen/tidarr/wiki/Lidarr-Integration-Guide);
 the header of `docker-compose.yml` lists where this stack differs.
 
-It needs an **active Tidal subscription** (upstream says an official account).
-Downloading from Tidal this way is against Tidal's terms of service, and
-Tidarr is described as for personal use. Downloads come straight to the NAS
-from Tidal, not through the debrid service.
+It needs a Tidal account.
 
 | Service  | What it is                         | Network               |
 |----------|------------------------------------|-----------------------|

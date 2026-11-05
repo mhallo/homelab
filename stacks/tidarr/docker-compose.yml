@@ -1,5 +1,5 @@
-# Tidarr: Tidal downloader with a Newznab + SABnzbd connector, used by Lidarr
-# and Aurral (both in media-stack).
+# Tidarr: a Newznab + SABnzbd-compatible music source for Lidarr and Aurral
+# (both in media-stack).
 # Upstream:
 #   https://github.com/cstaelen/tidarr#getting-started
 #   https://github.com/cstaelen/tidarr/wiki/Lidarr-Integration-Guide

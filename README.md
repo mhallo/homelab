@@ -16,7 +16,7 @@ stacks/             One directory per Portainer stack
   media-stack/      *arr apps, jellyfin, aurral; config in Docker-Appdata
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
-  tidarr/           Tidal downloader for Lidarr and Aurral
+  tidarr/           music source for Lidarr and Aurral
 ```
 
 ## Networking model
