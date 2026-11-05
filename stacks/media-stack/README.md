@@ -36,7 +36,8 @@ No new env vars. Redeploy `media-stack` in Portainer, then:
    profile and naming.
 4. In **Lidarr → Settings → Metadata**, set **Tag Audio Files with Metadata**
    to all files, so Aurral matches artists by MusicBrainz ID, not name.
-5. Connect Tidarr: see `stacks/tidarr/README.md`, "Connect Aurral".
+5. Connect Tidarr: see `stacks/tidarr/README.md`, "Connect Lidarr and
+   Aurral".
 6. **Settings → Status → Storage → Run checks** should pass for the Library
    folder and the Lidarr library.
 7. In Jellyfin, add a Music library for `/mnt/storage/aurral` (Lidarr's

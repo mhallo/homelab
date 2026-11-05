@@ -39,16 +39,29 @@ which Lidarr sees as `/mnt/storage/tidarr-downloads` and Aurral sees as
 4. In Tidarr's settings, check the quality you want (up to "max") and the
    path template. Upstream warns to set the template path correctly.
 
-## Connect Lidarr
+## Connect Lidarr and Aurral
 
-Do these in order; the indexer refers to the download client. Both screens
-need **Show advanced** (the cog) turned on.
+Tidarr answers as a Newznab indexer and a SABnzbd download client. The
+indexer is added once, in Prowlarr, which syncs it to Lidarr and also serves
+it to Aurral. The download client and its path mapping are set in Lidarr
+itself, since Prowlarr only syncs indexers. Based on upstream's
+[Lidarr guide](https://github.com/cstaelen/tidarr/wiki/Lidarr-Integration-Guide)
+and Aurral's [Tidarr docs](https://docs.aurral.org/integrations/usenet/#tidarr).
+
+Use `http://tidarr:8484` everywhere, never `https` or `tidarr.gt3.dev`:
+Prowlarr, Lidarr and Aurral reach Tidarr directly on `media-net`, and Tidarr
+only speaks plain HTTP. An `https` URL fails with "The SSL connection could
+not be established".
 
 Get the API key:
 
 ```
 docker exec tidarr cat /shared/.tidarr-api-key
 ```
+
+### Lidarr: download client
+
+Turn on **Show advanced** (the cog) on these screens.
 
 1. **Lidarr → Settings → Download Clients → + → SABnzbd**
    - Name: `Tidarr`
@@ -64,42 +77,35 @@ docker exec tidarr cat /shared/.tidarr-api-key
    
    Without this, Lidarr reports "No files found are eligible for import"
    because it looks in a path that only exists inside Tidarr.
-3. **Lidarr → Settings → Indexers → + → Newznab**
+
+### Prowlarr: indexer
+
+3. **Prowlarr → Indexers → Add Indexer → Generic Newznab**
    - Name: `Tidarr`
    - URL: `http://tidarr:8484`, API Path: `/api/lidarr`
    - API Key: the key above
-   - Categories: `3000`, `3010`, `3040`
-   - Download Client: `Tidarr`
-   - Enable RSS off; Automatic Search and Interactive Search on.
+   - Sync Profile: one with Automatic and Interactive Search on
    - **Test**, then **Save**.
+4. **Prowlarr → Settings → Apps** must list Lidarr (Prowlarr Server
+   `http://prowlarr:9696`, Lidarr Server `http://lidarr:8686`, Lidarr's API
+   key). The indexer then appears in Lidarr as `Tidarr (Prowlarr)`. Don't
+   also add it by hand in Lidarr.
 
-## Connect Aurral
+Lidarr sends the indexer's releases to the Tidarr client on its own: they are
+Usenet releases and Tidarr is the only Usenet client (Decypharr handles
+torrents).
 
-Aurral reaches Tidarr through Prowlarr, which Tidarr answers as a Newznab
-indexer. Based on Aurral's
-[Tidarr docs](https://docs.aurral.org/integrations/usenet/#tidarr). Use the
-same API key as above.
+### Aurral
 
-1. **Prowlarr → Indexers → Add Indexer → Generic Newznab**
-   - Name: `Tidarr`
-   - URL: `http://tidarr:8484`, API Path: `/api/lidarr`
-   - API Key: the Tidarr key
-   - **Test**, then **Save**.
-   
-   If Prowlarr syncs indexers to Lidarr, this adds a second Tidarr indexer
-   there next to the one from the Lidarr steps. Either set its sync profile so
-   it doesn't sync, or delete the hand-made Lidarr indexer and keep the synced
-   one (then set its Download Client to `Tidarr`).
-2. **Aurral → Settings → Downloads → Prowlarr**: enable it, URL
+5. **Aurral → Settings → Downloads → Prowlarr**: enable it, URL
    `http://prowlarr:9696`, Prowlarr's API key, **Test connection**, then
    **Refresh indexers** and turn on `Tidarr`.
-3. **Aurral → Settings → Downloads → Tidarr**: URL `http://tidarr:8484`, the
+6. **Aurral → Settings → Downloads → Tidarr**: URL `http://tidarr:8484`, the
    Tidarr key, **Test connection**.
 
 Aurral reads finished albums at `/downloads`, which is the same host folder
-as Tidarr's `/shared/nzb_downloads`, so no remote path mapping is needed.
-Tidarr deletes an album's files once Aurral has imported and removed the
-download.
+as Tidarr's `/shared/nzb_downloads`, so it needs no path mapping. Tidarr
+deletes an album's files once Aurral has imported and removed the download.
 
 ## Using it
 
@@ -124,7 +130,13 @@ that can't be recreated by logging in again.
 ## Troubleshooting
 
 - **Lidarr or Aurral can't reach Tidarr**: `media-net` doesn't exist, or
-  `tidarr` isn't on it. Deploy `media-stack` first.
+  `tidarr` isn't on it. Deploy `media-stack` first. To test from Prowlarr:
+  `docker exec prowlarr curl -s "http://tidarr:8484/api/lidarr?t=caps&apikey=<key>"`
+  should print XML.
+- **"SSL connection could not be established"**: the URL is `https`. Use
+  `http://tidarr:8484`.
+- **Two Tidarr indexers in Lidarr**: one was added by hand; delete it and
+  keep `Tidarr (Prowlarr)`.
 - **Aurral says the Tidarr download finished but can't find it**: check that
   `docker exec aurral ls /downloads` lists the album folders.
 - **Downloads complete but nothing imports**: the Remote Path Mapping above is
