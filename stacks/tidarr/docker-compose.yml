@@ -9,9 +9,9 @@
 # - /shared (tiddl login, settings, API key) is a named volume, not a host path.
 # - Lidarr's download folder is /volume1/Media/tidarr-downloads, which Lidarr
 #   already sees as /mnt/storage/tidarr-downloads through its /volume1/Media
-#   mount. Tidarr reports its own path (/shared/nzb_downloads), so Lidarr needs
+#   mount. Tidarr reports finished albums as /downloads/<id>, so Lidarr needs
 #   a Remote Path Mapping for it (see README). Aurral mounts the same folder
-#   at /downloads, the path Tidarr reports, so it needs no mapping.
+#   at /downloads, so it needs no mapping.
 # - No /music mount: albums are fetched through Lidarr or Aurral, which do the
 #   importing.
 # - Admin password is a Portainer env var (see .env.example).
