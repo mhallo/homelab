@@ -1,0 +1,51 @@
+# Tidarr: Tidal downloader with a Newznab + SABnzbd connector, used by Lidarr
+# and Aurral (both in media-stack).
+# Upstream:
+#   https://github.com/cstaelen/tidarr#getting-started
+#   https://github.com/cstaelen/tidarr/wiki/Lidarr-Integration-Guide
+#
+# Differences from upstream:
+# - Pinned image digest.
+# - /shared (tiddl login, settings, API key) is a named volume, not a host path.
+# - Lidarr's download folder is /volume1/Media/tidarr-downloads, which Lidarr
+#   already sees as /mnt/storage/tidarr-downloads through its /volume1/Media
+#   mount. Tidarr reports its own path (/shared/nzb_downloads), so Lidarr needs
+#   a Remote Path Mapping for it (see README). Aurral mounts the same folder
+#   at /downloads, the path Tidarr reports, so it needs no mapping.
+# - No /music mount: albums are fetched through Lidarr or Aurral, which do the
+#   importing.
+# - Admin password is a Portainer env var (see .env.example).
+# - Routed through Traefik and joined to the media-stack's network, so Lidarr
+#   and Aurral reach it at http://tidarr:8484.
+
+services:
+  tidarr:
+    image: cstaelen/tidarr:1.2.9@sha256:7eb46d369bee03891f2d26e019eb925ad87ccb9913b0dcc888e7a31683f5e75d
+    container_name: tidarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - UMASK=0022
+      - TZ=America/Los_Angeles
+      - ADMIN_PASSWORD=${TIDARR_ADMIN_PASSWORD}
+    volumes:
+      - tidarr-config:/shared
+      - /volume1/Media/tidarr-downloads:/shared/nzb_downloads
+    restart: unless-stopped
+    networks: [media, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tidarr.rule=Host(`tidarr.gt3.dev`)"
+      - "traefik.http.routers.tidarr.entrypoints=websecure"
+      - "traefik.http.services.tidarr.loadbalancer.server.port=8484"
+
+volumes:
+  tidarr-config:
+
+networks:
+  # Created by the media-stack.
+  media:
+    external: true
+    name: media-net
+  proxy:
+    external: true

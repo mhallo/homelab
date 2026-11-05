@@ -13,9 +13,10 @@ stacks/             One directory per Portainer stack
     dynamic/routes.yml      routes for things that aren't containers
   dozzle/           live container log viewer; read-only socket proxy
   immich/
-  media-stack/
+  media-stack/      *arr apps, jellyfin, aurral; config in Docker-Appdata
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
+  tidarr/           Tidal downloader for Lidarr and Aurral
 ```
 
 ## Networking model
@@ -61,8 +62,9 @@ flowchart TB
 
             subgraph STACKS["proxy network — found via Docker labels"]
                 IMM["immich<br>immich_server · postgres<br>redis · machine-learning"]
-                MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr · flaresolverr<br>jellyseerr · decypharr"]
+                MED["media-stack<br>jellyfin · sonarr · radarr<br>lidarr · prowlarr · flaresolverr<br>jellyseerr · decypharr · aurral"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
+                TID["tidarr"]
                 DOZ["dozzle<br>web · socket-proxy"]
             end
         end
@@ -76,7 +78,9 @@ flowchart TB
     TRAEFIK --> IMM
     TRAEFIK --> MED
     TRAEFIK --> SURE
+    TRAEFIK --> TID
     TRAEFIK --> DOZ
+    MED -- "media-net" --> TID
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
     TRAEFIK -. "planned" .-> HP
