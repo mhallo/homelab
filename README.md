@@ -250,6 +250,29 @@ Dynamic config comes from two places: Docker labels on the containers
 themselves, and `dynamic/routes.yml` for the handful of things that aren't
 containers. Traefik watches both and reloads on change.
 
+## Day to day
+
+Run from the Mac, in `terraform/` of the repo that owns the thing (this one,
+or the private media repo). `terraform/README.md` has the details.
+
+| Task | How |
+|---|---|
+| Add a stack | Compose file on a branch, secrets as `TF_VAR_*` fields in Bitwarden, a `portainer_stack` block in `terraform/portainer.tf`. Merge, then `./tf apply` |
+| Change DNS, the tailnet policy, a stack's settings | Edit the `.tf` file (or `tailscale/policy.hujson`), `./tf plan`, `./tf apply` |
+| Rotate a secret | Update the Bitwarden field, bump the stack's `env_wo_version`, `./tf apply` |
+| Image updates | Merge Renovate's PR. traefik and dozzle redeploy within 5 minutes on their own; immich, sure and tailscale need a redeploy in Portainer |
+| Find hand-made changes | `./tf plan`: anything listed is drift. Copy it into the code, or apply to revert it |
+| Logs, container shells | dozzle; Portainer's container console |
+
+**Still by hand**, because no Terraform provider covers it: settings inside
+Jellyfin, Immich, Sure and the like (they live in each app's database, so
+back up its appdata or volumes), and the NAS itself: UGOS settings, disks,
+`ip_forward` for Tailscale.
+
+**SSH** is only needed for the NAS itself, and for backups or debugging
+outside a single container (the `routes.yml` check above). Anything inside a
+container works from Portainer's console.
+
 ## Conventions
 
 - **State goes in a named volume**, not a bind mount. A relative bind mount
