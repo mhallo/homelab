@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Runs Terraform (or any command) with secrets from the Bitwarden vault.
+#
+#   ./tf plan                 terraform plan, with secrets loaded
+#   ./tf apply
+#   ./tf run ./snapshot.sh    any other command, with secrets loaded
+#
+# Secrets come from one Secure Note, "homelab-terraform" (override with
+# BW_ITEM): every custom field becomes an environment variable of the same
+# name, e.g. CLOUDFLARE_API_TOKEN or TF_VAR_db_password; other names are also
+# exported as TF_VAR_<lowercase name>. Nothing is written to disk. To unlock
+# once per shell instead of on every run:
+#
+#   export BW_SESSION=$(bw unlock --raw)
+set -euo pipefail
+cd "$(dirname "$0")"
+command -v bw >/dev/null || { echo "install the Bitwarden CLI: brew install bitwarden-cli" >&2; exit 1; }
+
+status=$(bw status | python3 -I -c 'import json,sys; print(json.load(sys.stdin)["status"])')
+case $status in
+  unauthenticated) echo "run 'bw login' first" >&2; exit 1 ;;
+  locked) BW_SESSION=$(bw unlock --raw); export BW_SESSION ;;
+esac
+bw sync >/dev/null
+
+item=${BW_ITEM:-homelab-terraform}
+BW_ITEM_JSON=$(bw get item "$item")
+export BW_ITEM_JSON
+
+if [ "${1:-}" = run ]; then shift; else set -- terraform "$@"; fi
+
+# Loads the item's custom fields into the environment and execs the command.
+# Any problem with the item aborts before the command runs.
+exec python3 -I -c '
+import json, os, re, sys
+fields = json.loads(os.environ.pop("BW_ITEM_JSON")).get("fields") or []
+if not fields:
+    sys.exit("the Bitwarden item has no custom fields")
+bad = []
+for f in fields:
+    name = f.get("name") or ""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+        # Never print the name itself: it may hold a pasted secret.
+        head = re.split(r"[=:\s]", name, 1)[0][:40]
+        hint = " (value pasted into the name box)" if re.search(r"[=:]", name) else ""
+        bad.append(f"  {head!r}{hint}")
+        continue
+    os.environ[name] = f.get("value") or ""
+    # Credentials are also visible to Terraform as variables: SONARR_API_KEY
+    # becomes var.sonarr_api_key, without a second copy in the vault.
+    if not name.startswith("TF_VAR_"):
+        os.environ.setdefault("TF_VAR_" + name.lower(), f.get("value") or "")
+if bad:
+    sys.exit("Bitwarden fields with invalid names:\n" + "\n".join(bad))
+os.execvp(sys.argv[1], sys.argv[1:])
+' "$@"
