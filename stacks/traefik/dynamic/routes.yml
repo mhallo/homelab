@@ -1,0 +1,31 @@
+# Routes for things Traefik cannot discover from Docker: the UGOS web UI, which
+# isn't a container, and portainer, which runs outside any stack. Everything
+# else is labelled on its own container.
+
+http:
+  routers:
+    traefik-dashboard:
+      rule: "Host(`traefik.gt3.dev`)"
+      service: api@internal
+      entryPoints: [websecure]
+
+    portainer:
+      rule: "Host(`portainer.gt3.dev`)"
+      service: portainer
+      entryPoints: [websecure]
+
+    nas:
+      rule: "Host(`nas.gt3.dev`)"
+      service: nas
+      entryPoints: [websecure]
+
+  services:
+    portainer:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.2.10:9000"
+
+    nas:
+      loadBalancer:
+        servers:
+          - url: "http://10.10.2.10:9999"
