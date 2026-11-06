@@ -35,6 +35,17 @@ rules below; read it before changing networking or traefik.
 - **Secrets are `${VAR}`** with no default value, and never committed.
   Document every new variable under a `# ---- stacks/<name> ----` heading in
   `.env.example`. Non-secret config is hardcoded in the compose file.
+  Each secret is also a `variable` (`sensitive`, `ephemeral`) in
+  `terraform/variables.tf` and an `env_wo` entry on the stack's
+  `portainer_stack`; its value lives in a `TF_VAR_<lowercase name>` field on
+  the `homelab-terraform` Bitwarden note. Never put a secret in `env`: that
+  lands in Terraform state.
+- **Stacks are deployed by Terraform, not the Portainer UI.** Every stack has
+  a `portainer_stack` in `terraform/portainer.tf`; copy an existing one and
+  keep `prevent_destroy`. Portainer clones `main`, so the compose file is
+  merged before the user runs `./tf apply`. Settings Terraform manages are
+  changed in the `.tf` files, never in the apps' UIs (the next apply would
+  revert them).
 - **Routing via Traefik labels**, not published ports. The routed service joins
   the external `proxy` network (plus `default` if it talks to siblings):
 
@@ -75,8 +86,8 @@ rules below; read it before changing networking or traefik.
 When adding a stack, update README.md: the `Layout` tree and the mermaid
 network diagram. Add its `portainer_stack` (and any secrets) to `terraform/`.
 
-Stack-specific setup goes in `stacks/<name>/README.md`: first deploy in
-Portainer (stack name, compose path, env vars or "none"), post-install steps,
+Stack-specific setup goes in `stacks/<name>/README.md`: first deploy (the
+`portainer_stack` added, Bitwarden fields or "none", then `./tf apply`), post-install steps,
 updating, backups, troubleshooting. `stacks/sure/README.md` is the model. The top-level
 README stays about how the whole lab fits together.
 
@@ -88,6 +99,8 @@ README stays about how the whole lab fits together.
   after touching `renovate.json`
 - `terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate`
   after touching `terraform/` (needs `terraform init -backend=false` once)
+- `./tf plan` against the live lab needs the user's Bitwarden unlock, so ask
+  them to run it. After an apply it should show no changes.
 
 ## Git
 
