@@ -15,6 +15,7 @@ stacks/             One directory per Portainer stack
   immich/
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
+terraform/          DNS, tailnet policy and the Portainer stacks themselves
 ```
 
 ## Networking model
@@ -92,7 +93,7 @@ Two parts of that don't live in the compose file:
 
 - `ip_forward` has to be enabled on the NAS, in `/etc/sysctl.d/99-tailscale.conf`
 - the route has to be approved in the Tailscale admin console, under the
-  machine's subnets
+  machine's subnets (`terraform/tailscale.tf` does this)
 
 iOS and macOS pick up subnet routes on their own. Linux clients need
 `--accept-routes`.
@@ -219,7 +220,8 @@ handful of routes still in `routes.yml`.
 
 Secrets are **never** committed. Compose files reference `${VAR}`; the values
 are set per-stack in Portainer's *Environment variables* section and stored on
-the NAS.
+the NAS. `terraform/` sets them from a Bitwarden note, so the note is the
+source of truth and Portainer is a copy (see `terraform/README.md`).
 
 See `.env.example` for which variables each stack requires. That file is
 documentation only -- git-backed stacks in Portainer do not read it.

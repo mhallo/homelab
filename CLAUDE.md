@@ -73,7 +73,7 @@ rules below; read it before changing networking or traefik.
 ## Docs
 
 When adding a stack, update README.md: the `Layout` tree and the mermaid
-network diagram.
+network diagram. Add its `portainer_stack` (and any secrets) to `terraform/`.
 
 Stack-specific setup goes in `stacks/<name>/README.md`: first deploy in
 Portainer (stack name, compose path, env vars or "none"), post-install steps,
@@ -86,6 +86,8 @@ README stays about how the whole lab fits together.
   (warnings about unset secret variables are expected)
 - `npx --package renovate -- renovate-config-validator renovate.json`
   after touching `renovate.json`
+- `terraform -chdir=terraform fmt -check && terraform -chdir=terraform validate`
+  after touching `terraform/` (needs `terraform init -backend=false` once)
 
 ## Git
 
