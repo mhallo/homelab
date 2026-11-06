@@ -40,6 +40,8 @@ resource "portainer_stack" "traefik" {
   }
 }
 
+# No update_interval: Immich's migrations are one-way, so its upgrades are
+# redeployed by hand after reading the release notes.
 resource "portainer_stack" "immich" {
   name                          = "immich"
   deployment_type               = "standalone"
@@ -90,6 +92,7 @@ resource "portainer_stack" "tailscale" {
   repository_reference_name     = "refs/heads/main"
   file_path_in_repository       = "stacks/tailscale/docker-compose.yml"
   git_repository_authentication = false # public repo
+  update_interval               = "5m"
 
   env_wo {
     name  = "TS_AUTHKEY"
@@ -111,6 +114,7 @@ resource "portainer_stack" "sure" {
   repository_reference_name     = "refs/heads/main"
   file_path_in_repository       = "stacks/sure/docker-compose.yml"
   git_repository_authentication = false # public repo
+  update_interval               = "5m"
 
   env_wo {
     name  = "SECRET_KEY_BASE"
