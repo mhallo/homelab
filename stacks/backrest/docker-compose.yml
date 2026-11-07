@@ -1,0 +1,56 @@
+# Backrest (web UI and scheduler for restic), from upstream's Docker Compose
+# example: https://github.com/garethgeorge/backrest#docker-compose
+#
+# Differences from upstream:
+# - Backrest's data, config and cache are named volumes instead of
+#   ./backrest/... bind mounts. /tmp and the rclone mount are dropped: the
+#   repo is B2 over its S3 API, which restic speaks natively.
+# - What gets backed up is mounted read-only under /userdata, by absolute
+#   path. Restores go to /restore, the only writable host path.
+# - Repo credentials are stack variables, but under names restic doesn't
+#   read. The repo's env in Backrest references them as ${...}, so
+#   config.json holds no secrets. A plain RESTIC_PASSWORD in the container's
+#   environment would trip Backrest's issue-1139 startup check.
+# - Routed through Traefik instead of publishing 9898.
+# - version: dropped (obsolete in compose v2).
+
+services:
+  backrest:
+    image: ghcr.io/garethgeorge/backrest:v1.14.1@sha256:b852979754281026230cc69fb11428e6d57c9a97784ab4a444ffc7934c53a215
+    container_name: backrest
+    hostname: backrest
+    volumes:
+      - data:/data
+      - config:/config
+      - cache:/cache
+      # Sources. README.md lists what's excluded and why.
+      - /volume1/Software/Docker-Appdata:/userdata/appdata:ro
+      - /volume1/@docker/volumes:/userdata/volumes:ro
+      - /volume1/docker/portainer:/userdata/portainer:ro
+      - /volume1/Photos:/userdata/photos:ro
+      - /volume1/Software/backrest-restore:/restore
+    environment:
+      - BACKREST_DATA=/data
+      - BACKREST_CONFIG=/config/config.json
+      - XDG_CACHE_HOME=/cache
+      - TZ=America/Los_Angeles
+      - BACKREST_B2_KEY_ID=${B2_KEY_ID}
+      - BACKREST_B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - BACKREST_REPO_PASSWORD=${RESTIC_PASSWORD}
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backrest.rule=Host(`backrest.gt3.dev`)"
+      - "traefik.http.routers.backrest.entrypoints=websecure"
+      - "traefik.http.services.backrest.loadbalancer.server.port=9898"
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data:
+  config:
+  cache:

@@ -7,6 +7,7 @@ deploys from this repo.
 
 ```
 stacks/             One directory per Portainer stack
+  backrest/         nightly restic backups to Backblaze B2
   traefik/          Reverse proxy for *.gt3.dev
     docker-compose.yml      static config as command flags; creates the
                             proxy network and owns the docker provider
@@ -64,6 +65,7 @@ flowchart TB
                 PRIV["more stacks<br>deployed from a private repo"]
                 SURE["sure<br>web · worker<br>postgres · redis"]
                 DOZ["dozzle<br>web · socket-proxy"]
+                BR["backrest<br>reads appdata + volumes"]
             end
         end
 
@@ -77,10 +79,12 @@ flowchart TB
     TRAEFIK --> PRIV
     TRAEFIK --> SURE
     TRAEFIK --> DOZ
+    TRAEFIK --> BR
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
     TRAEFIK -. "planned" .-> HP
     TRAEFIK -. "Cloudflare API writes TXT" .-> LE
+    BR -. "restic over S3 API" .-> B2["Backblaze B2<br>gt3-homelab-backup"]
 ```
 
 ### Getting to it from outside
@@ -263,10 +267,11 @@ or the private media repo). `terraform/README.md` has the details.
 | Image updates | Merge Renovate's PR. Every stack redeploys within 5 minutes on its own except immich (one-way migrations): redeploy it in Portainer after reading the release notes |
 | Find hand-made changes | `./tf plan`: anything listed is drift. Copy it into the code, or apply to revert it |
 | Logs, container shells | dozzle; Portainer's container console |
+| Backups, restores | backrest.gt3.dev, nightly to B2. `stacks/backrest/README.md` |
 
 **Still by hand**, because no Terraform provider covers it: settings inside
-Jellyfin, Immich, Sure and the like (they live in each app's database, so
-back up its appdata or volumes), and the NAS itself: UGOS settings, disks,
+Jellyfin, Immich, Sure and the like (they live in each app's database,
+which backrest backs up), and the NAS itself: UGOS settings, disks,
 `ip_forward` for Tailscale.
 
 **SSH** is only needed for the NAS itself, and for backups or debugging

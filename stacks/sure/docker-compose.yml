@@ -5,7 +5,8 @@
 # - No insecure fallbacks for SECRET_KEY_BASE / POSTGRES_PASSWORD; they're
 #   Portainer env vars (see .env.example).
 # - The backup profile is dropped. It bind mounts ./bin/db-backup.sh, which
-#   resolves against Portainer's checkout and would come up empty.
+#   resolves against Portainer's checkout and would come up empty. The
+#   db-backup service replaces it.
 # - AI / OpenAI variables are left out until they're wanted.
 
 x-db-env: &db_env
@@ -96,6 +97,35 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  # Nightly pg_dump into db-backups, which Backrest uploads offsite. Backing
+  # up postgres-data directly could catch it mid-write. From
+  # https://github.com/prodrigestivill/docker-postgres-backup-local#docker-compose;
+  # -Z0 leaves dumps uncompressed so restic can dedupe them, and only a week
+  # is kept here because restic keeps the history.
+  db-backup:
+    image: prodrigestivill/postgres-backup-local:16@sha256:a0103fbce0c48ccc7693ddbb2a2bfa733048db845354f635efef9e4566de185d
+    container_name: sure_db-backup
+    user: postgres:postgres
+    volumes:
+      - db-backups:/backups
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: sure_production
+      POSTGRES_USER: sure_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_EXTRA_OPTS: -Z0
+      BACKUP_SUFFIX: .sql
+      SCHEDULE: "0 1 * * *"
+      BACKUP_ON_START: "TRUE"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 0
+      BACKUP_KEEP_MONTHS: 0
+      TZ: America/Los_Angeles
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   redis:
     image: redis:8@sha256:718f745deb7dfefeac6eed7041fc7ec9476b50e61b247932682457c41adafa0e
     container_name: sure_redis
@@ -117,3 +147,4 @@ volumes:
   app-storage:
   postgres-data:
   redis-data:
+  db-backups:

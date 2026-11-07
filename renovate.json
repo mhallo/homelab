@@ -8,6 +8,10 @@
   "packageRules": [
     {
       "description": "One PR per stack, so a merge is one Portainer redeploy. Majors still get their own PR.",
+      "matchFileNames": ["stacks/backrest/**"],
+      "groupName": "backrest"
+    },
+    {
       "matchFileNames": ["stacks/dozzle/**"],
       "groupName": "dozzle"
     },
@@ -32,6 +36,13 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["postgres", "**/postgres", "redis", "**/redis", "**/valkey"],
       "matchUpdateTypes": ["major", "minor", "patch"],
+      "enabled": false
+    },
+    {
+      "description": "The dump image's tag is the Postgres major it dumps, so it moves with the database's tag, by hand.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["prodrigestivill/postgres-backup-local"],
+      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {

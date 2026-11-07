@@ -70,3 +70,24 @@ variable "active_record_encryption_key_derivation_salt" {
   sensitive   = true
   ephemeral   = true
 }
+
+variable "b2_key_id" {
+  description = "backrest: B2 application key id, limited to the backup bucket"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "b2_application_key" {
+  description = "backrest: B2 application key"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "restic_password" {
+  description = "backrest: the restic repo's password. Lose it and the backups are unreadable"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
