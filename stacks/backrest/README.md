@@ -18,8 +18,10 @@ Everything is mounted read-only under `/userdata`:
 | `/userdata/volumes`    | `/volume1/@docker/volumes`        | every named volume: Sure, Tidarr, Tailscale, Dozzle |
 | `/userdata/portainer`  | `/volume1/docker/portainer`       | Portainer's database |
 | `/userdata/photos`     | `/volume1/Photos`                 | Immich's external library: the original photos |
+| `/userdata/documents`  | `/volume1/Documents`              | documents, and the Terraform state copies (`terraform-state/`) |
 
-Media (`/volume1/Media`) isn't backed up. It can be downloaded again.
+Not backed up: `/volume1/Media`, which can be downloaded again, and
+`/volume1/Backups`, which mostly overlaps with what's here.
 
 Excluded from the plan:
 
@@ -64,7 +66,7 @@ is consistent and gets backed up with the rest.
      the defaults, monthly.
 6. **Add plan**:
    - Name: `nas`, repo `b2`
-   - Paths: the four `/userdata/...` paths above
+   - Paths: the five `/userdata/...` paths above
    - Excludes: the table above
    - Schedule: cron `0 3 * * *`. That's after Sure's dump (01:00) and Immich's
      (02:00).
