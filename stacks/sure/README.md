@@ -11,7 +11,8 @@ the header of `docker-compose.yml` lists where this stack differs from it.
 | `worker` | Sidekiq: syncs, imports, cron     | default          |
 | `db`     | Postgres 16                       | default          |
 | `redis`  | Sidekiq queue                     | default          |
-| `db-backup` | nightly `pg_dump` at 01:00     | default          |
+| `db-backup` | nightly `pg_dump` at 01:00, as `postgres` | default |
+| `db-backup-init` | one-shot: makes `db-backups` writable by `postgres`, then exits | none |
 
 State lives in the `app-storage`, `postgres-data` and `redis-data` named
 volumes. `db-backups` holds the last 7 nightly dumps, which the backrest
