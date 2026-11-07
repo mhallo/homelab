@@ -162,3 +162,35 @@ resource "portainer_stack" "dozzle" {
     prevent_destroy = true
   }
 }
+
+resource "portainer_stack" "backrest" {
+  name                          = "backrest"
+  deployment_type               = "standalone"
+  method                        = "repository"
+  endpoint_id                   = local.endpoint_id
+  repository_url                = local.repo
+  repository_reference_name     = "refs/heads/main"
+  file_path_in_repository       = "stacks/backrest/docker-compose.yml"
+  git_repository_authentication = false # public repo
+  update_interval               = "5m"
+
+  env_wo {
+    name  = "B2_KEY_ID"
+    value = var.b2_key_id
+  }
+
+  env_wo {
+    name  = "B2_APPLICATION_KEY"
+    value = var.b2_application_key
+  }
+
+  env_wo {
+    name  = "RESTIC_PASSWORD"
+    value = var.restic_password
+  }
+  env_wo_version = 1
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}

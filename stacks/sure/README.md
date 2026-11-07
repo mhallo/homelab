@@ -11,9 +11,11 @@ the header of `docker-compose.yml` lists where this stack differs from it.
 | `worker` | Sidekiq: syncs, imports, cron     | default          |
 | `db`     | Postgres 16                       | default          |
 | `redis`  | Sidekiq queue                     | default          |
+| `db-backup` | nightly `pg_dump` at 01:00     | default          |
 
 State lives in the `app-storage`, `postgres-data` and `redis-data` named
-volumes.
+volumes. `db-backups` holds the last 7 nightly dumps, which the backrest
+stack uploads offsite.
 
 ## First deploy
 
@@ -72,6 +74,14 @@ merging, redeploy the stack in Portainer with **Re-pull image and redeploy**.
 Postgres major upgrades are disabled in `renovate.json`. A new major can't read
 the old data directory, so it needs a `pg_dump` / restore rather than a tag
 bump.
+
+## Backups
+
+Backrest uploads `app-storage` and the dumps in `db-backups` nightly, not
+`postgres-data`. Restoring is in `stacks/backrest/README.md`. A dump is only
+useful with the three `ACTIVE_RECORD_ENCRYPTION_*` values it was taken with.
+
+`db-backup`'s image tag is the Postgres major (`16`). Change it with `db`'s.
 
 ## Connecting Claude (MCP)
 
