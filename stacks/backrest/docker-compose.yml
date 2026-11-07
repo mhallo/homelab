@@ -28,6 +28,7 @@ services:
       - /volume1/@docker/volumes:/userdata/volumes:ro
       - /volume1/docker/portainer:/userdata/portainer:ro
       - /volume1/Photos:/userdata/photos:ro
+      - /volume1/Documents:/userdata/documents:ro
       - /volume1/Software/backrest-restore:/restore
     environment:
       - BACKREST_DATA=/data

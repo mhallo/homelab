@@ -102,6 +102,18 @@ services:
   # https://github.com/prodrigestivill/docker-postgres-backup-local#docker-compose;
   # -Z0 leaves dumps uncompressed so restic can dedupe them, and only a week
   # is kept here because restic keeps the history.
+  # The image's /backups is owned by root, so a fresh db-backups volume isn't
+  # writable by postgres. This one-shot hands it over and exits; it's the
+  # only part that runs as root.
+  db-backup-init:
+    image: prodrigestivill/postgres-backup-local:16@sha256:a0103fbce0c48ccc7693ddbb2a2bfa733048db845354f635efef9e4566de185d
+    container_name: sure_db-backup-init
+    user: root
+    entrypoint: ["chown", "postgres:postgres", "/backups"]
+    volumes:
+      - db-backups:/backups
+    restart: "no"
+
   db-backup:
     image: prodrigestivill/postgres-backup-local:16@sha256:a0103fbce0c48ccc7693ddbb2a2bfa733048db845354f635efef9e4566de185d
     container_name: sure_db-backup
@@ -124,6 +136,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-backup-init:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   redis:
