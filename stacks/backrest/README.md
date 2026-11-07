@@ -60,7 +60,8 @@ is consistent and gets backed up with the rest.
      AWS_SECRET_ACCESS_KEY=${BACKREST_B2_APPLICATION_KEY}
      RESTIC_PASSWORD=${BACKREST_REPO_PASSWORD}
      ```
-   - Prune: weekly. Check: monthly.
+   - Auto Unlock on (Backrest is the only client). Prune and check: leave
+     the defaults, monthly.
 6. **Add plan**:
    - Name: `nas`, repo `b2`
    - Paths: the four `/userdata/...` paths above
