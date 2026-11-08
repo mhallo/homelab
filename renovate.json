@@ -45,15 +45,13 @@
       "enabled": false
     },
     {
-      "description": "Immich migrations are one-way and it warns against skipping versions. Let a release settle first.",
+      "description": "Immich migrations are one-way and it warns against skipping versions. Read the release notes before merging. No minimumReleaseAge: GHCR gives Renovate no release dates, so it would hold every update forever.",
       "matchPackageNames": ["ghcr.io/immich-app/**"],
-      "minimumReleaseAge": "7 days",
       "labels": ["immich", "read-release-notes"]
     },
     {
-      "description": "Sure runs one-way Rails migrations and releases often. Let a release settle first.",
+      "description": "Sure runs one-way Rails migrations and releases often. Read the release notes before merging. No minimumReleaseAge, for the same GHCR reason as Immich.",
       "matchPackageNames": ["ghcr.io/we-promise/**"],
-      "minimumReleaseAge": "7 days",
       "labels": ["sure", "read-release-notes"]
     },
     {

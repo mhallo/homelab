@@ -22,7 +22,9 @@ rules below; read it before changing networking or traefik.
 - **Every stack gets a Renovate group**: a `matchFileNames:
   ["stacks/<name>/**"]` + `groupName` rule in `renovate.json`, kept
   alphabetical, so one merge is one redeploy. Add a further `packageRules`
-  entry when an app has one-way migrations (`minimumReleaseAge`, labels).
+  entry when an app has one-way migrations (labels; `minimumReleaseAge` only
+  for Docker Hub images, since GHCR has no release dates and Renovate then
+  holds the update forever).
   Postgres/redis/valkey updates are disabled there on purpose; change their
   tags by hand when the app's release notes call for it.
 - **State in named volumes**, declared under top-level `volumes:`. Use an
