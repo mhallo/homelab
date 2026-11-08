@@ -1,8 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices",
-    "schedule:weekly"
+    "config:best-practices"
   ],
   "timezone": "America/Los_Angeles",
   "packageRules": [
