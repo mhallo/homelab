@@ -36,7 +36,7 @@ x-rails-env: &rails_env
 
 services:
   web:
-    image: ghcr.io/we-promise/sure:0.7.4@sha256:391b2c52acfe538065a41cdd1c9755f90d95ba17a2c06e9b6438b12098df3f3a
+    image: ghcr.io/we-promise/sure:0.7.6@sha256:61cd4c1fa9917200f8db4434b45d968235f375c52cdbdc81bf4a4df555a2f090
     container_name: sure_web
     volumes:
       - app-storage:/rails/storage
@@ -63,7 +63,7 @@ services:
       - "traefik.http.services.sure.loadbalancer.server.port=3000"
 
   worker:
-    image: ghcr.io/we-promise/sure:0.7.4@sha256:391b2c52acfe538065a41cdd1c9755f90d95ba17a2c06e9b6438b12098df3f3a
+    image: ghcr.io/we-promise/sure:0.7.6@sha256:61cd4c1fa9917200f8db4434b45d968235f375c52cdbdc81bf4a4df555a2f090
     container_name: sure_worker
     command: bundle exec sidekiq
     volumes:
@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54
+    image: postgres:16@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
     container_name: sure_postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -141,7 +141,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8@sha256:718f745deb7dfefeac6eed7041fc7ec9476b50e61b247932682457c41adafa0e
+    image: redis:8@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53
     container_name: sure_redis
     volumes:
       - redis-data:/data
