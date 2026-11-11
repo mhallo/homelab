@@ -264,7 +264,7 @@ or the private media repo). `terraform/README.md` has the details.
 | Add a stack | Compose file on a branch, secrets as `TF_VAR_*` fields in Bitwarden, a `portainer_stack` block in `terraform/portainer.tf`. Merge, then `./tf apply` |
 | Change DNS, the tailnet policy, a stack's settings | Edit the `.tf` file (or `tailscale/policy.hujson`), `./tf plan`, `./tf apply` |
 | Rotate a secret | Update the Bitwarden field, bump the stack's `env_wo_version`, `./tf apply` |
-| Image updates | Merge Renovate's PR. Every stack redeploys within 5 minutes on its own except immich (one-way migrations): redeploy it in Portainer after reading the release notes |
+| Image updates | Merge Renovate's PR. Every stack redeploys within 5 minutes on its own. Read the release notes before merging a PR labelled `read-release-notes` (immich, sure): their migrations are one-way |
 | Find hand-made changes | `./tf plan`: anything listed is drift. Copy it into the code, or apply to revert it |
 | Logs, container shells | dozzle; Portainer's container console |
 | Backups, restores | backrest.gt3.dev, nightly to B2. `stacks/backrest/README.md` |
