@@ -1,19 +1,19 @@
-# ps5-tracker (PS5 Pro stock alerts), from deploy/docker-compose.yml in the
-# private repo https://github.com/mhallo/ps5-tracker
+# ps5-tracker (stock alerts), from deploy/docker-compose.yml in the private
+# repo https://github.com/mhallo/ps5-tracker
 #
 # Differences from that example:
 # - Image pinned by digest; Portainer pulls it with the ghcr registry
 #   credential in terraform/portainer.tf.
 # - Secrets come from the stack's environment instead of an env_file.
-# - The Telegram login is seeded into the data volume before the first
-#   deploy; see README.md.
-#
-# No Traefik route and no proxy network: it has no web UI and only makes
-# outbound requests.
+# - The Telegram login, and config.yml if used, are seeded into the data
+#   volume; see README.md. Without config.yml it runs the image's built-in
+#   PS5 Pro config.
+# - Routed through Traefik for the status server (/ping, /status, /healthz)
+#   instead of publishing 8080.
 
 services:
   tracker:
-    image: ghcr.io/mhallo/ps5-tracker:0.1.2@sha256:6c101d6946c94ed928356366ef28a04f9e721ee47c4884ec119c48e7df45ea32
+    image: ghcr.io/mhallo/ps5-tracker:0.2.0@sha256:09415d31d4d30dacd173133bf12b5fb8c3e2796800fa0acbdf57fb507a05399b
     container_name: ps5-tracker
     restart: unless-stopped
     environment:
@@ -26,6 +26,16 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    networks: [default, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ps5-tracker.rule=Host(`ps5-tracker.gt3.dev`)"
+      - "traefik.http.routers.ps5-tracker.entrypoints=websecure"
+      - "traefik.http.services.ps5-tracker.loadbalancer.server.port=8080"
 
 volumes:
   data:
+
+networks:
+  proxy:
+    external: true

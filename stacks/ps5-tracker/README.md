@@ -1,17 +1,18 @@
 # ps5-tracker
 
-PS5 Pro stock alerts, built from the private repo
-[mhallo/ps5-tracker](https://github.com/mhallo/ps5-tracker). It checks PS
-Direct, Walmart and Sam's Club, listens to the NowInStock PS5 Telegram
-channel, and pushes in-stock and preorder alerts to ntfy with add-to-cart
-links. That repo's README covers how it works.
+Stock alerts, built from the private repo
+[mhallo/ps5-tracker](https://github.com/mhallo/ps5-tracker). It listens to
+Telegram stock channels, checks store pages, and pushes alerts to ntfy with
+add-to-cart links. That repo's README covers how it works and every config
+option. Its status server is at `https://ps5-tracker.gt3.dev`.
 
-| Service   | What it is                         | Network |
-|-----------|------------------------------------|---------|
-| `tracker` | the tracker; outbound requests only | default |
+| Service   | What it is                                      | Network          |
+|-----------|-------------------------------------------------|------------------|
+| `tracker` | the tracker, plus its status server on port 8080 | default, `proxy` |
 
-The Telegram login lives in the `ps5-tracker_data` volume as
-`tg-session.json`. The image is private, so Portainer pulls it with the
+The `ps5-tracker_data` volume holds the Telegram login (`tg-session.json`)
+and, optionally, `config.yml`. Without `config.yml` it runs the image's
+built-in config, which watches the PS5 Pro. The image is private, so Portainer pulls it with the
 `ghcr` registry credential in `terraform/portainer.tf`.
 
 ## First deploy
@@ -45,13 +46,43 @@ The Telegram login lives in the `ps5-tracker_data` volume as
    shows `not logged in` every minute.
 4. `./tf apply`. This creates the `ghcr` registry and the stack.
 5. Check the log in Dozzle, or with `docker logs ps5-tracker`. It should
-   show `watching 4 listings` and
+   show `config: …`, `status server on :8080` and
    `telegram: listening to "NowInStock.net PlayStation 5 Alerts"`.
-6. Send a test push to your phone:
+6. Open `https://ps5-tracker.gt3.dev/ping`. Your phone should get a
+   **Pong!** push with the same summary the page shows.
 
-   ```
-   docker exec ps5-tracker /ps5-tracker -test-notify
-   ```
+## Status
+
+From any device on the LAN or tailnet, in a browser or with `curl`:
+
+| URL | |
+|---|---|
+| `https://ps5-tracker.gt3.dev/ping` | Push **Pong!** to ntfy with the config and each source's last activity, and show it. Once per 10s. |
+| `https://ps5-tracker.gt3.dev/status` | The same summary, no push. |
+| `https://ps5-tracker.gt3.dev/healthz` | `ok`. The container healthcheck uses it too. |
+
+There's no login on these. They're only reachable on the LAN and tailnet,
+and the summary leaves out the ntfy topic and other secrets.
+
+## Changing what it watches
+
+Write a `config.yml` (start from `config.example.yml` in the ps5-tracker
+repo) and check it on the Mac:
+
+```
+cd ~/git/ps5-tracker && go run . -config config.yml -check-config
+```
+
+Then copy it into the volume and restart, from the Mac:
+
+```
+ssh -t <user>@10.10.2.10 "echo $(base64 < config.yml) | base64 -d | sudo docker run --rm -i -v ps5-tracker_data:/data busybox sh -c 'cat > /data/config.yml && chown 65532:65532 /data/config.yml' && sudo docker restart ps5-tracker"
+```
+
+A config error stops the container at start with the reason in its log. To
+go back to the built-in config, delete `/data/config.yml` the same way and
+restart. New Telegram channels need joining in the Telegram app first; the
+existing login covers them.
 
 ## Updating
 
@@ -69,8 +100,8 @@ Change the field on the Bitwarden note, bump `env_wo_version` on the stack
 
 ## Backups
 
-There's nothing worth backing up. If the volume is lost, log in again with
-`-tg-login`. Don't add the volume to backrest: `tg-session.json` gives full
+Keep `config.yml` in your own copy; otherwise there's nothing worth backing
+up. If the volume is lost, log in again with `-tg-login`. Don't add the volume to backrest: `tg-session.json` gives full
 access to the Telegram account.
 
 ## Troubleshooting
@@ -81,5 +112,7 @@ access to the Telegram account.
   `docker exec -it ps5-tracker /ps5-tracker -tg-login`.
 - **`AUTH_KEY_DUPLICATED`, or the session stops working**: another copy used
   the same session at the same time. Stop the other copy, then log in again.
-- **No pushes**: check the topic with `-test-notify`. On iOS, turn on Time
+- **404 from Traefik on ps5-tracker.gt3.dev**: the container isn't on
+  `proxy`, or it's restart-looping on a config error (check its log).
+- **No pushes**: check the topic with `/ping` or `-test-notify`. On iOS, turn on Time
   Sensitive Notifications for ntfy so alerts get through Focus.
