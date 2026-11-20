@@ -19,6 +19,10 @@
       "groupName": "immich"
     },
     {
+      "matchFileNames": ["stacks/ps5-tracker/**"],
+      "groupName": "ps5-tracker"
+    },
+    {
       "matchFileNames": ["stacks/sure/**"],
       "groupName": "sure"
     },
@@ -53,6 +57,11 @@
       "description": "Sure runs one-way Rails migrations and releases often. Read the release notes before merging. No minimumReleaseAge, for the same GHCR reason as Immich.",
       "matchPackageNames": ["ghcr.io/we-promise/**"],
       "labels": ["sure", "read-release-notes"]
+    },
+    {
+      "description": "Private image: Renovate has no credentials for it, so its tag and digest are bumped by hand. See stacks/ps5-tracker/README.md.",
+      "matchPackageNames": ["ghcr.io/mhallo/ps5-tracker"],
+      "enabled": false
     },
     {
       "description": "A Postgres major can't read the previous major's data directory. That upgrade is a dump and restore, not a tag bump.",

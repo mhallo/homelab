@@ -1,0 +1,31 @@
+# ps5-tracker (PS5 Pro stock alerts), from deploy/docker-compose.yml in the
+# private repo https://github.com/mhallo/ps5-tracker
+#
+# Differences from that example:
+# - Image pinned by digest; Portainer pulls it with the ghcr registry
+#   credential in terraform/portainer.tf.
+# - Secrets come from the stack's environment instead of an env_file.
+# - The Telegram login is seeded into the data volume before the first
+#   deploy; see README.md.
+#
+# No Traefik route and no proxy network: it has no web UI and only makes
+# outbound requests.
+
+services:
+  tracker:
+    image: ghcr.io/mhallo/ps5-tracker:0.1.2@sha256:6c101d6946c94ed928356366ef28a04f9e721ee47c4884ec119c48e7df45ea32
+    container_name: ps5-tracker
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - NTFY_TOPIC=${NTFY_TOPIC}
+      - TG_APP_ID=${TG_APP_ID}
+      - TG_APP_HASH=${TG_APP_HASH}
+    volumes:
+      - data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+volumes:
+  data:

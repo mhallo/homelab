@@ -195,3 +195,48 @@ resource "portainer_stack" "backrest" {
     prevent_destroy = true
   }
 }
+
+# Pull credential for private images on GHCR (ghcr.io/mhallo/*). Stacks
+# that use one list it in registries.
+resource "portainer_registry" "ghcr" {
+  name                = "ghcr"
+  type                = 8 # GitHub
+  url                 = "ghcr.io"
+  authentication      = true
+  username            = "mhallo"
+  password_wo         = var.ghcr_token
+  password_wo_version = 1
+}
+
+resource "portainer_stack" "ps5_tracker" {
+  name                          = "ps5-tracker"
+  deployment_type               = "standalone"
+  method                        = "repository"
+  endpoint_id                   = local.endpoint_id
+  repository_url                = local.repo
+  repository_reference_name     = "refs/heads/main"
+  file_path_in_repository       = "stacks/ps5-tracker/docker-compose.yml"
+  git_repository_authentication = false # public repo
+  update_interval               = "5m"
+  registries                    = [portainer_registry.ghcr.id]
+
+  env_wo {
+    name  = "NTFY_TOPIC"
+    value = var.ntfy_topic
+  }
+
+  env_wo {
+    name  = "TG_APP_ID"
+    value = var.tg_app_id
+  }
+
+  env_wo {
+    name  = "TG_APP_HASH"
+    value = var.tg_app_hash
+  }
+  env_wo_version = 1
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
