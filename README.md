@@ -14,6 +14,7 @@ stacks/             One directory per Portainer stack
     dynamic/routes.yml      routes for things that aren't containers
   dozzle/           live container log viewer; read-only socket proxy
   immich/
+  ps5-tracker/      PS5 Pro stock alerts; private image from GHCR
   sure/             personal finance; state in named volumes
   tailscale/        subnet router; state in a named volume
 terraform/          DNS, tailnet policy and the Portainer stacks themselves
@@ -67,6 +68,8 @@ flowchart TB
                 DOZ["dozzle<br>web · socket-proxy"]
                 BR["backrest<br>reads appdata + volumes"]
             end
+
+            PS5["ps5-tracker<br>no route, outbound only"]
         end
 
         HP["HP EliteDesk mini<br>planned — joins as a swarm node"]
@@ -85,6 +88,8 @@ flowchart TB
     TRAEFIK -. "planned" .-> HP
     TRAEFIK -. "Cloudflare API writes TXT" .-> LE
     BR -. "restic over S3 API" .-> B2["Backblaze B2<br>gt3-homelab-backup"]
+    PS5 -. "store APIs · Telegram · ntfy push" .-> NET["Internet"]
+    GHCR["GHCR<br>private image"] -. "pulled with read:packages token" .-> PS5
 ```
 
 ### Getting to it from outside

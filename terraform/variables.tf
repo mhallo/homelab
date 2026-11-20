@@ -91,3 +91,31 @@ variable "restic_password" {
   sensitive   = true
   ephemeral   = true
 }
+
+variable "ghcr_token" {
+  description = "ghcr registry: classic GitHub token with only read:packages, for pulling private images"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "ntfy_topic" {
+  description = "ps5-tracker: NTFY_TOPIC"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "tg_app_id" {
+  description = "ps5-tracker: TG_APP_ID, from my.telegram.org"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "tg_app_hash" {
+  description = "ps5-tracker: TG_APP_HASH, from my.telegram.org"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
