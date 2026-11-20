@@ -73,16 +73,31 @@ repo) and check it on the Mac:
 cd ~/git/ps5-tracker && go run . -config config.yml -check-config
 ```
 
-Then copy it into the volume and restart, from the Mac:
+Then copy it into the volume, from the Mac:
 
 ```
-ssh -t <user>@10.10.2.10 "echo $(base64 < config.yml) | base64 -d | sudo docker run --rm -i -v ps5-tracker_data:/data busybox sh -c 'cat > /data/config.yml && chown 65532:65532 /data/config.yml' && sudo docker restart ps5-tracker"
+ssh -t <user>@10.10.2.10 "echo $(base64 < config.yml) | base64 -d | sudo docker run --rm -i -v ps5-tracker_data:/data busybox sh -c 'cat > /data/config.yml && chown 65532:65532 /data/config.yml'"
 ```
 
-A config error stops the container at start with the reason in its log. To
-go back to the built-in config, delete `/data/config.yml` the same way and
-restart. New Telegram channels need joining in the Telegram app first; the
-existing login covers them.
+No restart needed: the tracker applies the new file within 3 seconds, and
+only the parts that changed start or stop. A file that doesn't parse is
+rejected and the running config stays; `/status` shows why. New Telegram
+channels need joining in the Telegram app first; the existing login covers
+them.
+
+### Versions and revert
+
+Every applied config is kept as a numbered version in
+`/data/config-versions/` (the last 50). On the NAS:
+
+```
+sudo docker exec ps5-tracker /ps5-tracker -versions
+sudo docker exec ps5-tracker /ps5-tracker -revert previous   # or a number: -revert 12
+```
+
+A revert applies within 3 seconds as a new version, so it can be undone the
+same way. To go back to the image's built-in config, delete
+`/data/config.yml`; that's applied as a new version too.
 
 ## Updating
 
@@ -113,6 +128,7 @@ access to the Telegram account.
 - **`AUTH_KEY_DUPLICATED`, or the session stops working**: another copy used
   the same session at the same time. Stop the other copy, then log in again.
 - **404 from Traefik on ps5-tracker.gt3.dev**: the container isn't on
-  `proxy`, or it's restart-looping on a config error (check its log).
+  `proxy`, or it's restart-looping (check its log). A bad `config.yml` only
+  stops it at start; while it's running, a bad edit is rejected instead.
 - **No pushes**: check the topic with `/ping` or `-test-notify`. On iOS, turn on Time
   Sensitive Notifications for ntfy so alerts get through Focus.
