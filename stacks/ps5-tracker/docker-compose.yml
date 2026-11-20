@@ -13,7 +13,7 @@
 
 services:
   tracker:
-    image: ghcr.io/mhallo/ps5-tracker:0.3.0@sha256:1c94eb9df59f26942921d75cfa5129cd54ce18c583b93540aad4e2d3f53fa76d
+    image: ghcr.io/mhallo/ps5-tracker:0.3.1@sha256:eb07e4e4509f809b77ae7305bfe916be6da07486b667b2e96856e5e03ce21986
     container_name: ps5-tracker
     restart: unless-stopped
     environment:
