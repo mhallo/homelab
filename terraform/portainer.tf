@@ -197,10 +197,11 @@ resource "portainer_stack" "backrest" {
 }
 
 # Pull credential for private images on GHCR (ghcr.io/mhallo/*). Stacks
-# that use one list it in registries.
+# that use one list it in registries. Type 3 (custom): this Portainer
+# rejects the GitHub type, 8.
 resource "portainer_registry" "ghcr" {
   name                = "ghcr"
-  type                = 8 # GitHub
+  type                = 3
   url                 = "ghcr.io"
   authentication      = true
   username            = "mhallo"
