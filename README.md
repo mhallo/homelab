@@ -92,7 +92,7 @@ flowchart TB
     TRAEFIK -. "planned" .-> HP
     TRAEFIK -. "Cloudflare API writes TXT" .-> LE
     BR -. "restic over S3 API" .-> B2["Backblaze B2<br>gt3-homelab-backup"]
-    PS5 -. "store APIs · Telegram · ntfy push" .-> NET["Internet"]
+    PS5 -. "store APIs · Telegram" .-> NET["Internet"]
     PS5 -- "alerts" --> BARK
     BARK -. "Apple push service" .-> NET
     GHCR["GHCR<br>private image"] -. "pulled with read:packages token" .-> PS5

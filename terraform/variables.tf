@@ -99,13 +99,6 @@ variable "ghcr_token" {
   ephemeral   = true
 }
 
-variable "ntfy_topic" {
-  description = "ps5-tracker: NTFY_TOPIC"
-  type        = string
-  sensitive   = true
-  ephemeral   = true
-}
-
 variable "tg_app_id" {
   description = "ps5-tracker: TG_APP_ID, from my.telegram.org"
   type        = string
