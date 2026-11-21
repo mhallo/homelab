@@ -11,6 +11,10 @@
       "groupName": "backrest"
     },
     {
+      "matchFileNames": ["stacks/bark/**"],
+      "groupName": "bark"
+    },
+    {
       "matchFileNames": ["stacks/dozzle/**"],
       "groupName": "dozzle"
     },

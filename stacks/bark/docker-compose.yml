@@ -1,0 +1,45 @@
+# Bark push server, from upstream's deploy/docker-compose.yaml:
+# https://github.com/Finb/bark-server/blob/master/deploy/docker-compose.yaml
+#
+# It sends to Apple's push service directly with the Bark app's key, which
+# ships in the image, so pushes don't go through ntfy.sh or Firebase.
+#
+# Differences from upstream:
+# - Image pinned by digest instead of the floating default tag.
+# - ./data bind mount replaced by a named volume (it holds the registered
+#   device keys).
+# - Routed through Traefik at bark.gt3.dev instead of publishing 8080. The
+#   phone only needs it once, to register; ps5-tracker reaches it at
+#   http://bark:8080 over the proxy network.
+# - restart: unless-stopped, TZ, healthcheck, capabilities dropped.
+
+services:
+  bark:
+    image: finab/bark-server:v2.4.0@sha256:f3fa583422f9e870cec2c619d714946f549fbf7fd2c822da4a4ef43893ed3159
+    container_name: bark
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+    volumes:
+      - data:/data
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bark.rule=Host(`bark.gt3.dev`)"
+      - "traefik.http.routers.bark.entrypoints=websecure"
+      - "traefik.http.services.bark.loadbalancer.server.port=8080"
+
+volumes:
+  data:
+
+networks:
+  proxy:
+    external: true

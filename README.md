@@ -8,6 +8,7 @@ deploys from this repo.
 ```
 stacks/             One directory per Portainer stack
   backrest/         nightly restic backups to Backblaze B2
+  bark/             iOS push server for alerts; sends to Apple directly
   traefik/          Reverse proxy for *.gt3.dev
     docker-compose.yml      static config as command flags; creates the
                             proxy network and owns the docker provider
@@ -69,6 +70,7 @@ flowchart TB
                 DOZ["dozzle<br>web · socket-proxy"]
                 BR["backrest<br>reads appdata + volumes"]
                 PS5["ps5-tracker<br>/ping · /status"]
+                BARK["bark<br>push server"]
             end
         end
 
@@ -84,12 +86,15 @@ flowchart TB
     TRAEFIK --> DOZ
     TRAEFIK --> BR
     TRAEFIK --> PS5
+    TRAEFIK --> BARK
     TRAEFIK --> PORT
     TRAEFIK --> UGOS
     TRAEFIK -. "planned" .-> HP
     TRAEFIK -. "Cloudflare API writes TXT" .-> LE
     BR -. "restic over S3 API" .-> B2["Backblaze B2<br>gt3-homelab-backup"]
     PS5 -. "store APIs · Telegram · ntfy push" .-> NET["Internet"]
+    PS5 -- "alerts" --> BARK
+    BARK -. "Apple push service" .-> NET
     GHCR["GHCR<br>private image"] -. "pulled with read:packages token" .-> PS5
 ```
 
