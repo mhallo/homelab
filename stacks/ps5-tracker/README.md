@@ -3,7 +3,8 @@
 Stock alerts, built from the private repo
 [mhallo/ps5-tracker](https://github.com/mhallo/ps5-tracker). It listens to
 Telegram stock channels, checks store pages, and pushes alerts to ntfy with
-add-to-cart links. That repo's README covers how it works and every config
+add-to-cart links, and to the `bark` stack, which pushes to the iPhone
+without going through ntfy.sh. That repo's README covers how it works and every config
 option. Its status server is at `https://ps5-tracker.gt3.dev`.
 
 | Service   | What it is                                      | Network          |
@@ -22,6 +23,8 @@ built-in config, which watches the PS5 Pro. The image is private, so Portainer p
 2. Add these fields to the `homelab-terraform` Bitwarden note:
    - `TF_VAR_ghcr_token`: the token from step 1
    - `TF_VAR_ntfy_topic`: the ntfy topic your phone subscribes to
+   - `TF_VAR_bark_key`: the Bark device key, from registering the phone with
+     the bark stack (`stacks/bark/README.md`)
    - `TF_VAR_tg_app_id`, `TF_VAR_tg_app_hash`: from https://my.telegram.org,
      under API development tools
 3. Seed the Telegram login into the volume, so the tracker can start
