@@ -113,6 +113,13 @@ variable "tg_app_id" {
   ephemeral   = true
 }
 
+variable "bark_key" {
+  description = "ps5-tracker: BARK_KEY, the device key the Bark app shows for bark.gt3.dev"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
 variable "tg_app_hash" {
   description = "ps5-tracker: TG_APP_HASH, from my.telegram.org"
   type        = string

@@ -243,6 +243,11 @@ resource "portainer_stack" "ps5_tracker" {
   }
 
   env_wo {
+    name  = "BARK_KEY"
+    value = var.bark_key
+  }
+
+  env_wo {
     name  = "TG_APP_ID"
     value = var.tg_app_id
   }
@@ -251,7 +256,7 @@ resource "portainer_stack" "ps5_tracker" {
     name  = "TG_APP_HASH"
     value = var.tg_app_hash
   }
-  env_wo_version = 1
+  env_wo_version = 2
 
   lifecycle {
     prevent_destroy = true

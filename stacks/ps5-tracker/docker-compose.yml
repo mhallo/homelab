@@ -8,17 +8,20 @@
 # - The Telegram login, and config.yml if used, are seeded into the data
 #   volume; see README.md. Without config.yml it runs the image's built-in
 #   PS5 Pro config.
+# - Alerts also go to the bark stack, over the proxy network.
 # - Routed through Traefik for the status server (/ping, /status, /healthz)
 #   instead of publishing 8080.
 
 services:
   tracker:
-    image: ghcr.io/mhallo/ps5-tracker:0.3.1@sha256:eb07e4e4509f809b77ae7305bfe916be6da07486b667b2e96856e5e03ce21986
+    image: ghcr.io/mhallo/ps5-tracker:0.4.0@sha256:702e1aab48cb8341d46568f31dbd47b5b80e4eba2aa894743248af84a273318c
     container_name: ps5-tracker
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles
       - NTFY_TOPIC=${NTFY_TOPIC}
+      - BARK_SERVER=http://bark:8080
+      - BARK_KEY=${BARK_KEY}
       - TG_APP_ID=${TG_APP_ID}
       - TG_APP_HASH=${TG_APP_HASH}
     volumes:
