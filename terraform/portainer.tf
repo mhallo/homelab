@@ -256,7 +256,7 @@ resource "portainer_stack" "ps5_tracker" {
     name  = "TG_APP_HASH"
     value = var.tg_app_hash
   }
-  env_wo_version = 2
+  env_wo_version = 3
 
   lifecycle {
     prevent_destroy = true
