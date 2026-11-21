@@ -2,10 +2,9 @@
 
 Stock alerts, built from the private repo
 [mhallo/ps5-tracker](https://github.com/mhallo/ps5-tracker). It listens to
-Telegram stock channels, checks store pages, and pushes alerts to ntfy with
-add-to-cart links, and to the `bark` stack, which pushes to the iPhone
-without going through ntfy.sh. That repo's README covers how it works and every config
-option. Its status server is at `https://ps5-tracker.gt3.dev`.
+Telegram stock channels, checks store pages, and pushes alerts with
+add-to-cart links to the iPhone through the `bark` stack. That repo's README
+covers how it works and every config option. Its status server is at `https://ps5-tracker.gt3.dev`.
 
 | Service   | What it is                                      | Network          |
 |-----------|-------------------------------------------------|------------------|
@@ -22,7 +21,6 @@ built-in config, which watches the PS5 Pro. The image is private, so Portainer p
    Settings → Developer settings → Personal access tokens → Tokens (classic).
 2. Add these fields to the `homelab-terraform` Bitwarden note:
    - `TF_VAR_ghcr_token`: the token from step 1
-   - `TF_VAR_ntfy_topic`: the ntfy topic your phone subscribes to
    - `TF_VAR_bark_key`: the Bark device key, from registering the phone with
      the bark stack (`stacks/bark/README.md`)
    - `TF_VAR_tg_app_id`, `TF_VAR_tg_app_hash`: from https://my.telegram.org,
@@ -60,12 +58,12 @@ From any device on the LAN or tailnet, in a browser or with `curl`:
 
 | URL | |
 |---|---|
-| `https://ps5-tracker.gt3.dev/ping` | Push **Pong!** to ntfy with the config and each source's last activity, and show it. Once per 10s. |
+| `https://ps5-tracker.gt3.dev/ping` | Push **Pong!** to the phone with the config and each source's last activity, and show it. Once per 10s. |
 | `https://ps5-tracker.gt3.dev/status` | The same summary, no push. |
 | `https://ps5-tracker.gt3.dev/healthz` | `ok`. The container healthcheck uses it too. |
 
 There's no login on these. They're only reachable on the LAN and tailnet,
-and the summary leaves out the ntfy topic and other secrets.
+and the summary leaves out the Bark key and other secrets.
 
 ## Changing what it watches
 
@@ -133,5 +131,8 @@ access to the Telegram account.
 - **404 from Traefik on ps5-tracker.gt3.dev**: the container isn't on
   `proxy`, or it's restart-looping (check its log). A bad `config.yml` only
   stops it at start; while it's running, a bad edit is rejected instead.
-- **No pushes**: check the topic with `/ping` or `-test-notify`. On iOS, turn on Time
-  Sensitive Notifications for ntfy so alerts get through Focus.
+- **No pushes**: try `/ping`, then check the `bark` container's log for the
+  `POST /push`. A `400 failed to get device token` means `TF_VAR_bark_key`
+  isn't the key from the `bark.gt3.dev` entry in the app; see
+  `stacks/bark/README.md`. Pushes showing on the Mac instead of the iPhone
+  mean iPhone notification mirroring is on.

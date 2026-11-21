@@ -8,7 +8,7 @@
 # - The Telegram login, and config.yml if used, are seeded into the data
 #   volume; see README.md. Without config.yml it runs the image's built-in
 #   PS5 Pro config.
-# - Alerts also go to the bark stack, over the proxy network.
+# - Alerts go to the bark stack over the proxy network, not ntfy.
 # - Routed through Traefik for the status server (/ping, /status, /healthz)
 #   instead of publishing 8080.
 
@@ -19,7 +19,6 @@ services:
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles
-      - NTFY_TOPIC=${NTFY_TOPIC}
       - BARK_SERVER=http://bark:8080
       - BARK_KEY=${BARK_KEY}
       - TG_APP_ID=${TG_APP_ID}

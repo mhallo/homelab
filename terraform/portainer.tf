@@ -238,11 +238,6 @@ resource "portainer_stack" "ps5_tracker" {
   registries                    = [portainer_registry.ghcr.id]
 
   env_wo {
-    name  = "NTFY_TOPIC"
-    value = var.ntfy_topic
-  }
-
-  env_wo {
     name  = "BARK_KEY"
     value = var.bark_key
   }
@@ -256,7 +251,7 @@ resource "portainer_stack" "ps5_tracker" {
     name  = "TG_APP_HASH"
     value = var.tg_app_hash
   }
-  env_wo_version = 3
+  env_wo_version = 4
 
   lifecycle {
     prevent_destroy = true
