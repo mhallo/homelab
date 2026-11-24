@@ -109,6 +109,13 @@ digest in `docker-compose.yml`; the build log prints the digest as
 
 Renovate can't see the private image, so this is done by hand.
 
+## Pausing
+
+`scale: 0` on the `tracker` service stops it: after the merge, Portainer's
+next redeploy removes the container, and `/ping` stops answering. Delete the
+line to resume. The Telegram login and config stay in the `data` volume, so
+it picks up where it left off. Leave the bark stack running either way.
+
 ## Rotating secrets
 
 Change the field on the Bitwarden note, bump `env_wo_version` on the stack
