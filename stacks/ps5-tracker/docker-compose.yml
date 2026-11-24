@@ -16,6 +16,9 @@ services:
   tracker:
     image: ghcr.io/mhallo/ps5-tracker:0.4.1@sha256:04886032bc732c14766878a898e2870793c11499e3b16b60f9072ac37ccdfc62
     container_name: ps5-tracker
+    # Paused: the console is bought. Remove this line to resume; the Telegram
+    # login and config stay in the data volume.
+    scale: 0
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles
